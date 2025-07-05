@@ -150,20 +150,111 @@
 }
 
 .theme-input {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--text-secondary);
-  border-opacity: 0.3;
+  background: linear-gradient(135deg,
+      var(--bg-secondary) 0%,
+      rgba(59, 130, 246, 0.03) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
   color: var(--text-primary);
+  padding: 14px 18px;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-input::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg,
+      rgba(59, 130, 246, 0.05) 0%,
+      transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.theme-input:focus::before {
+  opacity: 1;
 }
 
 .theme-input:focus {
   border-color: #3b82f6;
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.1),
+    0 4px 16px rgba(59, 130, 246, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   outline: none;
+  transform: translateY(-1px);
+}
+
+.theme-input:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
 }
 
 .theme-input::placeholder {
   color: var(--text-secondary);
-  opacity: 0.7;
+  opacity: 0.6;
+  font-weight: 400;
+}
+
+/* Enhanced input styling for number inputs */
+.theme-input[type="number"] {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  letter-spacing: 0.025em;
+}
+
+/* Remove default number input arrows */
+.theme-input[type="number"]::-webkit-outer-spin-button,
+.theme-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.theme-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Special styling for inputs with icons */
+.theme-input.pl-12 {
+  padding-left: 48px;
+}
+
+/* Light theme adjustments */
+.light .theme-input {
+  background: linear-gradient(135deg,
+      var(--bg-secondary) 0%,
+      rgba(59, 130, 246, 0.02) 100%);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.light .theme-input:focus {
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.08),
+    0 4px 16px rgba(59, 130, 246, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* OLED theme adjustments */
+.oled .theme-input {
+  background: linear-gradient(135deg,
+      var(--bg-secondary) 0%,
+      rgba(59, 130, 246, 0.08) 100%);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.oled .theme-input:focus {
+  border-color: #60a5fa;
+  box-shadow:
+    0 0 0 3px rgba(96, 165, 250, 0.15),
+    0 4px 16px rgba(96, 165, 250, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .theme-button-secondary {

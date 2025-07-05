@@ -271,34 +271,6 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
-
-        {/* Date Format */}
-        <div className='theme-card'>
-          <div className='p-6 border-b theme-border'>
-            <div className='flex items-center gap-3'>
-              <div className='p-2 rounded-xl bg-blue-500/10'>
-                <Calendar className='w-5 h-5 text-blue-400' />
-              </div>
-              <h3 className='futuristic-section-title !mb-0'>Date Format</h3>
-            </div>
-          </div>
-
-          <div className='p-6'>
-            <select
-              value={localSettings.dateFormat}
-              onChange={(e) => handleChange('dateFormat', e.target.value)}
-              className='theme-select w-full'
-            >
-              <option value='MM/dd/yyyy'>MM/DD/YYYY (US)</option>
-              <option value='dd/MM/yyyy'>DD/MM/YYYY (EU)</option>
-              <option value='yyyy-MM-dd'>YYYY-MM-DD (ISO)</option>
-            </select>
-            <p className='text-xs theme-text-secondary mt-2 opacity-80'>
-              Example: {new Date().toLocaleDateString('en-US')}
-            </p>
-          </div>
-        </div>
-
         {/* Notifications */}
         <div className='theme-card'>
           <div className='p-6 border-b theme-border'>

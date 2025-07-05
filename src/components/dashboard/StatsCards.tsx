@@ -1,5 +1,6 @@
-// components/dashboard/StatsCards.tsx
+// src/components/dashboard/StatsCards.tsx
 import { TrendingUp, PieChart, DollarSign, Activity } from 'lucide-react'
+import { useTradeStore } from '@/stores/useTradeStore'
 
 interface StatCardProps {
   title: string
@@ -29,57 +30,72 @@ function StatCard({ title, value, subtitle, icon: Icon, trend = 'neutral' }: Sta
 }
 
 export function StatsCards() {
-  return (
-    <div className='grid grid-cols-2 gap-4'>
-      <StatCard title='Total P&L' value='$6,580.70' subtitle='+12.5% this month' icon={TrendingUp} trend='up' />
-      <StatCard title='Active Positions' value='8' subtitle='$45,200 invested' icon={PieChart} trend='neutral' />
-      <StatCard title='This Month' value='$1,780.45' subtitle='10 trades' icon={DollarSign} trend='up' />
-      <StatCard title='Win Rate' value='72%' subtitle='18/25 profitable' icon={Activity} trend='up' />
-    </div>
-  )
-}
+  const { dashboardStats, portfolioStats, isLoadingDashboard } = useTradeStore()
 
-// components/dashboard/MonthlyPnL.tsx
-interface MonthlyData {
-  month: string
-  profit: number
-  trades: number
-}
+  // Safe defaults
+  const stats = dashboardStats || {
+    totalPnL: 0,
+    activePositions: 0,
+    totalValue: 0,
+    winRate: 0,
+    thisMonthPnL: 0,
+  }
 
-const monthlyData: MonthlyData[] = [
-  { month: 'Jan 2024', profit: 2450.3, trades: 12 },
-  { month: 'Feb 2024', profit: -850.2, trades: 8 },
-  { month: 'Mar 2024', profit: 3200.15, trades: 15 },
-  { month: 'Apr 2024', profit: 1780.45, trades: 10 },
-]
+  const portfolio = portfolioStats || {
+    totalValue: 0,
+    totalCost: 0,
+    totalUnrealizedPnL: 0,
+    totalPositions: 0,
+  }
 
-export function MonthlyPnL() {
-  return (
-    <div className='bg-gray-800/50 rounded-xl border border-gray-700'>
-      <div className='p-4 border-b border-gray-700'>
-        <h3 className='text-lg font-semibold text-white'>Monthly Summary</h3>
-        <p className='text-sm text-gray-400'>Track your trading performance</p>
-      </div>
-
-      <div className='p-4 space-y-3'>
-        {monthlyData.map((month, index) => (
-          <div
-            key={index}
-            className='flex items-center justify-between p-3 bg-gray-900/50 rounded-lg hover:bg-gray-900/70 transition-colors'
-          >
-            <div>
-              <div className='text-white font-medium'>{month.month}</div>
-              <div className='text-sm text-gray-400'>{month.trades} trades</div>
-            </div>
-            <div className='text-right'>
-              <div className={`font-bold ${month.profit > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {month.profit > 0 ? '+' : ''}${month.profit.toFixed(2)}
-              </div>
-              <div className='text-sm text-gray-400'>Net P&L</div>
-            </div>
+  if (isLoadingDashboard) {
+    return (
+      <div className='grid grid-cols-2 gap-4'>
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className='bg-gray-800/50 rounded-xl p-4 border border-gray-700 animate-pulse'>
+            <div className='h-4 bg-gray-700 rounded mb-2'></div>
+            <div className='h-8 bg-gray-700 rounded mb-1'></div>
+            <div className='h-3 bg-gray-700 rounded'></div>
           </div>
         ))}
       </div>
+    )
+  }
+
+  return (
+    <div className='grid grid-cols-2 gap-4'>
+      <StatCard
+        title='Total P&L'
+        value={`${stats.totalPnL.toFixed(2)}`}
+        subtitle={
+          stats.totalPnL >= 0
+            ? `+${((stats.totalPnL / (portfolio.totalCost || 1)) * 100).toFixed(1)}%`
+            : `${((stats.totalPnL / (portfolio.totalCost || 1)) * 100).toFixed(1)}%`
+        }
+        icon={TrendingUp}
+        trend={stats.totalPnL >= 0 ? 'up' : 'down'}
+      />
+      <StatCard
+        title='Active Positions'
+        value={stats.activePositions.toString()}
+        subtitle={`${portfolio.totalValue.toFixed(0)} invested`}
+        icon={PieChart}
+        trend='neutral'
+      />
+      <StatCard
+        title='This Month'
+        value={`${stats.thisMonthPnL.toFixed(2)}`}
+        subtitle='Current month P&L'
+        icon={DollarSign}
+        trend={stats.thisMonthPnL >= 0 ? 'up' : 'down'}
+      />
+      <StatCard
+        title='Win Rate'
+        value={`${stats.winRate.toFixed(0)}%`}
+        subtitle='Profitable trades'
+        icon={Activity}
+        trend={stats.winRate >= 50 ? 'up' : 'down'}
+      />
     </div>
   )
 }

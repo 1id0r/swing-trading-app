@@ -1,0 +1,132 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User settings for the app
+model UserSettings {
+  id              String  @id @default(cuid())
+  defaultCurrency String  @default("USD")
+  displayCurrency String  @default("USD")
+  taxRate         Float   @default(25.0) // Capital gains tax percentage
+  defaultFee      Float   @default(9.99) // Default commission
+  dateFormat      String  @default("MM/dd/yyyy")
+  theme           String  @default("dark")
+  
+  // Notification preferences
+  notifyTrades       Boolean @default(true)
+  notifyPriceAlerts  Boolean @default(false)
+  notifyMonthly      Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Individual trades (buy/sell transactions)
+model Trade {
+  id           String   @id @default(cuid())
+  ticker       String   // Stock symbol (AAPL, MSFT)
+  company      String   // Company name (Apple Inc.)
+  logo         String?  // Company logo URL
+  action       String   // "BUY" or "SELL"
+  shares       Int      // Number of shares
+  pricePerShare Float   // Price per share at time of trade
+  fee          Float    @default(0) // Commission/trading fee
+  currency     String   @default("USD")
+  date         DateTime // Trade date
+  
+  // Calculated fields
+  totalValue   Float    // shares * pricePerShare
+  totalCost    Float    // totalValue + fee (for buys) or totalValue - fee (for sells)
+  
+  // P&L tracking (only for sells)
+  costBasis    Float?   // FIFO cost basis for this sell
+  grossProfit  Float?   // Before taxes and fees
+  netProfit    Float?   // After taxes and fees
+  taxAmount    Float?   // Capital gains tax paid
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([ticker])
+  @@index([date])
+  @@index([action])
+}
+
+// Current stock positions (aggregated from trades)
+model Position {
+  id            String   @id @default(cuid())
+  ticker        String   @unique // One position per stock
+  company       String   // Company name
+  logo          String?  // Company logo URL
+  currency      String   @default("USD")
+  
+  // Position data
+  totalShares   Int      // Current shares owned
+  averagePrice  Float    // Average cost basis (FIFO)
+  totalCost     Float    // Total amount invested
+  
+  // Market data (updated periodically)
+  currentPrice     Float?   // Current market price
+  lastPriceUpdate  DateTime? // When price was last updated
+  
+  // Calculated P&L
+  unrealizedPnL       Float?   // Current profit/loss
+  unrealizedPnLPercent Float?  // Percentage gain/loss
+  
+  // Metadata
+  lastTradeDate DateTime // Date of most recent trade
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Price alerts (future feature)
+model PriceAlert {
+  id          String   @id @default(cuid())
+  ticker      String   // Stock to watch
+  targetPrice Float    // Alert when price reaches this
+  condition   String   // "above" or "below"
+  isActive    Boolean  @default(true)
+  
+  // Notification settings
+  notifyEmail Boolean @default(false)
+  notifyPush  Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([ticker, isActive])
+}
+
+// Monthly performance summaries (for dashboard)
+model MonthlyPerformance {
+  id          String   @id @default(cuid())
+  year        Int      // 2024
+  month       Int      // 1-12
+  
+  // Trading activity
+  totalTrades    Int     @default(0)
+  buyTrades      Int     @default(0)
+  sellTrades     Int     @default(0)
+  
+  // Financial performance
+  grossProfit    Float   @default(0)
+  netProfit      Float   @default(0)
+  totalFees      Float   @default(0)
+  totalTaxes     Float   @default(0)
+  
+  // Portfolio value
+  startingValue  Float?  // Portfolio value at start of month
+  endingValue    Float?  // Portfolio value at end of month
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([year, month])
+}

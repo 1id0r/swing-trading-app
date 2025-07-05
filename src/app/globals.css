@@ -43,7 +43,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-:root {
+/* :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -76,6 +76,7 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  
 }
 
 .dark {
@@ -110,13 +111,248 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+} */
+
+:root {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+}
+
+.light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+}
+
+.dark {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+}
+
+.oled {
+  --bg-primary: #000000;
+  --bg-secondary: #111111;
+  --text-primary: #ffffff;
+  --text-secondary: #888888;
+}
+
+@layer utilities {
+  .bg-theme-primary {
+    background-color: var(--bg-primary);
+  }
+
+  .bg-theme-secondary {
+    background-color: var(--bg-secondary);
+  }
+
+  .text-theme-primary {
+    color: var(--text-primary);
+  }
+
+  .text-theme-secondary {
+    color: var(--text-secondary);
+  }
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+.dock-menu {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: rgba(31, 41, 55, 0.9);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(75, 85, 99, 0.3);
+  padding: 8px 16px 8px 16px;
+  margin: 0 16px 16px 16px;
+  border-radius: 24px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  position: relative;
+  gap: 8px;
+  min-height: 70px;
+}
+
+.dock-menu__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px 8px 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  flex: 1;
+  max-width: 80px;
+  min-width: 60px;
+}
+
+.dock-menu__item:hover {
+  transform: translateY(-2px);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.dock-menu__item.active {
+  transform: translateY(-4px);
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.dock-menu__item.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--lineWidth, 0px);
+  height: 3px;
+  background: var(--component-active-color, #3b82f6);
+  border-radius: 2px;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dock-menu__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-bottom: 2px;
+}
+
+.dock-menu__icon .icon {
+  width: 20px;
+  height: 20px;
+  color: #9ca3af;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dock-menu__item:hover .dock-menu__icon .icon {
+  color: var(--component-active-color, #3b82f6);
+  transform: scale(1.1);
+}
+
+.dock-menu__item.active .dock-menu__icon .icon {
+  color: var(--component-active-color, #3b82f6);
+  transform: scale(1.15);
+}
+
+.dock-menu__text {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: capitalize;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.dock-menu__item:hover .dock-menu__text {
+  color: var(--component-active-color, #3b82f6);
+  transform: scale(1.05);
+}
+
+.dock-menu__item.active .dock-menu__text {
+  color: var(--component-active-color, #3b82f6);
+  font-weight: 600;
+  transform: scale(1.1);
+}
+
+/* Special styling for Add Trade button */
+.dock-menu__item[data-add-trade="true"] {
+  background: linear-gradient(135deg, var(--component-active-color, #3b82f6), #1d4ed8);
+  border-radius: 20px;
+  margin: 0 4px;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.dock-menu__item[data-add-trade="true"]:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+.dock-menu__item[data-add-trade="true"] .dock-menu__icon .icon {
+  color: white;
+}
+
+.dock-menu__item[data-add-trade="true"] .dock-menu__text {
+  color: white;
+  font-weight: 600;
+}
+
+/* Theme support */
+.light .dock-menu {
+  background: rgba(255, 255, 255, 0.9);
+  border-top: 1px solid rgba(229, 231, 235, 0.8);
+}
+
+.light .dock-menu__icon .icon {
+  color: #6b7280;
+}
+
+.light .dock-menu__text {
+  color: #374151;
+}
+
+.oled .dock-menu {
+  background: rgba(0, 0, 0, 0.95);
+  border-top: 1px solid rgba(55, 65, 81, 0.5);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.8);
+}
+
+.oled .dock-menu__icon .icon {
+  color: #9ca3af;
+}
+
+.oled .dock-menu__text {
+  color: #d1d5db;
+}
+
+/* Responsive adjustments */
+@media (max-width: 320px) {
+  .dock-menu {
+    padding: 6px 12px;
+    margin: 0 8px 12px 8px;
+    gap: 4px;
+  }
+
+  .dock-menu__item {
+    padding: 8px 4px 6px 4px;
+    min-width: 50px;
+  }
+
+  .dock-menu__text {
+    font-size: 10px;
+  }
+}
+
+/* Animation for first load */
+.dock-menu {
+  animation: dockSlideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes dockSlideUp {
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }

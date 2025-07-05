@@ -1,340 +1,340 @@
-// stores/useTradeStore.ts
+// stores/useTradeStore.ts (Updated for Database)
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { devtools } from 'zustand/middleware';
 
 export interface Trade {
   id: string;
   ticker: string;
   company: string;
+  logo?: string;
   action: 'BUY' | 'SELL';
   shares: number;
   pricePerShare: number;
-  date: string;
   fee: number;
   currency: string;
-  profit?: number;
-  createdAt: Date;
-  updatedAt: Date;
+  date: string;
+  totalValue: number;
+  totalCost: number;
+  costBasis?: number;
+  grossProfit?: number;
+  netProfit?: number;
+  taxAmount?: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Position {
+  id: string;
   ticker: string;
   company: string;
+  logo?: string;
+  currency: string;
   totalShares: number;
   averagePrice: number;
-  currentPrice?: number;
   totalCost: number;
+  currentPrice?: number;
+  lastPriceUpdate?: string;
   unrealizedPnL?: number;
-  currency: string;
+  unrealizedPnLPercent?: number;
+  lastTradeDate: string;
+}
+
+export interface PortfolioStats {
+  totalPositions: number;
+  totalValue: number;
+  totalCost: number;
+  totalUnrealizedPnL: number;
+  lastUpdated?: number;
+}
+
+export interface DashboardStats {
+  totalPnL: number;
+  activePositions: number;
+  totalValue: number;
+  winRate: number;
+  thisMonthPnL: number;
 }
 
 interface TradeState {
+  // Data
   trades: Trade[];
   positions: Position[];
+  portfolioStats: PortfolioStats | null;
+  dashboardStats: DashboardStats | null;
+  
+  // Loading states
   isLoading: boolean;
+  isLoadingPositions: boolean;
+  isLoadingDashboard: boolean;
   error: string | null;
+  
+  // Pagination
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
 }
 
 interface TradeActions {
-  // Trade actions
-  addTrade: (trade: Omit<Trade, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateTrade: (id: string, updates: Partial<Trade>) => void;
-  deleteTrade: (id: string) => void;
+  // Trade operations
+  fetchTrades: (options?: { ticker?: string; limit?: number; offset?: number }) => Promise<void>;
+  addTrade: (trade: Omit<Trade, 'id' | 'createdAt' | 'updatedAt' | 'totalValue' | 'totalCost'>) => Promise<void>;
+  updateTrade: (id: string, updates: Partial<Trade>) => Promise<void>;
+  deleteTrade: (id: string) => Promise<void>;
   
-  // Position calculations
-  calculatePositions: () => void;
-  updateCurrentPrices: (prices: Record<string, number>) => void;
+  // Position operations
+  fetchPositions: (updatePrices?: boolean) => Promise<void>;
+  updatePositionPrices: () => Promise<void>;
   
-  // FIFO calculation for P&L
-  calculatePnL: (sellTrade: Trade) => number;
+  // Dashboard data
+  fetchDashboardData: () => Promise<void>;
   
-  // Loading states
-  setLoading: (loading: boolean) => void;
+  // Utilities
   setError: (error: string | null) => void;
-  
-  // Data management
-  clearAllData: () => void;
+  clearError: () => void;
+  reset: () => void;
 }
 
 type TradeStore = TradeState & TradeActions;
 
-export const useTradeStore = create<TradeStore>()(
-  devtools(
-    persist(
-      (set, get) => ({
-        // Initial state
-        trades: [],
-        positions: [],
-        isLoading: false,
-        error: null,
-
-        // Actions
-        addTrade: (tradeData) => {
-          const newTrade: Trade = {
-            ...tradeData,
-            id: crypto.randomUUID(),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          };
-
-          set((state) => ({
-            trades: [...state.trades, newTrade],
-            error: null,
-          }));
-
-          // Recalculate positions after adding trade
-          get().calculatePositions();
-        },
-
-        updateTrade: (id, updates) => {
-          set((state) => ({
-            trades: state.trades.map((trade) =>
-              trade.id === id
-                ? { ...trade, ...updates, updatedAt: new Date() }
-                : trade
-            ),
-            error: null,
-          }));
-
-          get().calculatePositions();
-        },
-
-        deleteTrade: (id) => {
-          set((state) => ({
-            trades: state.trades.filter((trade) => trade.id !== id),
-            error: null,
-          }));
-
-          get().calculatePositions();
-        },
-
-        calculatePositions: () => {
-          const { trades } = get();
-          const positionMap = new Map<string, Position>();
-
-          // Sort trades by date to process in chronological order
-          const sortedTrades = [...trades].sort(
-            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-          );
-
-          sortedTrades.forEach((trade) => {
-            const existing = positionMap.get(trade.ticker);
-
-            if (!existing) {
-              // First trade for this ticker
-              if (trade.action === 'BUY') {
-                positionMap.set(trade.ticker, {
-                  ticker: trade.ticker,
-                  company: trade.company,
-                  totalShares: trade.shares,
-                  averagePrice: trade.pricePerShare,
-                  totalCost: trade.shares * trade.pricePerShare + trade.fee,
-                  currency: trade.currency,
-                });
-              }
-            } else {
-              // Update existing position
-              if (trade.action === 'BUY') {
-                const newTotalCost = existing.totalCost + (trade.shares * trade.pricePerShare) + trade.fee;
-                const newTotalShares = existing.totalShares + trade.shares;
-                
-                positionMap.set(trade.ticker, {
-                  ...existing,
-                  totalShares: newTotalShares,
-                  averagePrice: newTotalCost / newTotalShares,
-                  totalCost: newTotalCost,
-                });
-              } else if (trade.action === 'SELL') {
-                const newTotalShares = existing.totalShares - trade.shares;
-                const soldCost = (trade.shares / existing.totalShares) * existing.totalCost;
-                
-                if (newTotalShares > 0) {
-                  positionMap.set(trade.ticker, {
-                    ...existing,
-                    totalShares: newTotalShares,
-                    totalCost: existing.totalCost - soldCost,
-                  });
-                } else {
-                  // Position fully closed
-                  positionMap.delete(trade.ticker);
-                }
-              }
-            }
-          });
-
-          set({ positions: Array.from(positionMap.values()) });
-        },
-
-        calculatePnL: (sellTrade) => {
-          const { trades } = get();
-          
-          // Get all BUY trades for this ticker before the sell date
-          const buyTrades = trades
-            .filter(
-              (t) =>
-                t.ticker === sellTrade.ticker &&
-                t.action === 'BUY' &&
-                new Date(t.date) <= new Date(sellTrade.date)
-            )
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-          // Get all previous SELL trades for this ticker
-          const previousSells = trades
-            .filter(
-              (t) =>
-                t.ticker === sellTrade.ticker &&
-                t.action === 'SELL' &&
-                new Date(t.date) < new Date(sellTrade.date)
-            )
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-          // Calculate available shares using FIFO
-          let availableShares = 0;
-          let totalCostBasis = 0;
-          let sharesSoldPreviously = 0;
-
-          // Calculate shares sold previously
-          previousSells.forEach(sell => sharesSoldPreviously += sell.shares);
-
-          // Apply FIFO to determine cost basis for current sell
-          let sharesToSell = sellTrade.shares;
-          let sharesProcessed = 0;
-
-          for (const buyTrade of buyTrades) {
-            const sharesFromThisBuy = buyTrade.shares;
-            const remainingFromBuy = sharesFromThisBuy - Math.max(0, sharesSoldPreviously - sharesProcessed);
-            
-            if (remainingFromBuy > 0 && sharesToSell > 0) {
-              const sharesToUseFromThisBuy = Math.min(remainingFromBuy, sharesToSell);
-              totalCostBasis += sharesToUseFromThisBuy * buyTrade.pricePerShare;
-              sharesToSell -= sharesToUseFromThisBuy;
-              availableShares += sharesToUseFromThisBuy;
-            }
-            
-            sharesProcessed += sharesFromThisBuy;
-          }
-
-          if (availableShares < sellTrade.shares) {
-            throw new Error(`Insufficient shares to sell. Available: ${availableShares}, Requested: ${sellTrade.shares}`);
-          }
-
-          // Calculate P&L
-          const saleRevenue = sellTrade.shares * sellTrade.pricePerShare;
-          const totalFees = sellTrade.fee;
-          const grossProfit = saleRevenue - totalCostBasis;
-          const netProfit = grossProfit - totalFees;
-
-          return netProfit;
-        },
-
-        updateCurrentPrices: (prices) => {
-          set((state) => ({
-            positions: state.positions.map((position) => {
-              const currentPrice = prices[position.ticker];
-              if (currentPrice) {
-                const currentValue = position.totalShares * currentPrice;
-                const unrealizedPnL = currentValue - position.totalCost;
-                return {
-                  ...position,
-                  currentPrice,
-                  unrealizedPnL,
-                };
-              }
-              return position;
-            }),
-          }));
-        },
-
-        setLoading: (loading) => set({ isLoading: loading }),
-        setError: (error) => set({ error }),
-
-        clearAllData: () => {
-          set({
-            trades: [],
-            positions: [],
-            isLoading: false,
-            error: null,
-          });
-        },
-      }),
-      {
-        name: 'swing-trading-storage',
-        version: 1,
-      }
-    ),
-    { name: 'TradeStore' }
-  )
-);
-
-// stores/useSettingsStore.ts
-interface UserSettings {
-  defaultCurrency: string;
-  displayCurrency: string;
-  taxRate: number;
-  dateFormat: string;
-  theme: 'dark' | 'light';
-  notifications: {
-    trades: boolean;
-    priceAlerts: boolean;
-    monthlyReports: boolean;
-  };
-}
-
-interface SettingsState {
-  settings: UserSettings;
-}
-
-interface SettingsActions {
-  updateSettings: (updates: Partial<UserSettings>) => void;
-  updateNotificationSettings: (notifications: Partial<UserSettings['notifications']>) => void;
-  resetSettings: () => void;
-}
-
-type SettingsStore = SettingsState & SettingsActions;
-
-const defaultSettings: UserSettings = {
-  defaultCurrency: 'USD',
-  displayCurrency: 'USD',
-  taxRate: 25, // 25% capital gains tax
-  dateFormat: 'MM/dd/yyyy',
-  theme: 'dark',
-  notifications: {
-    trades: true,
-    priceAlerts: false,
-    monthlyReports: true,
+const initialState: TradeState = {
+  trades: [],
+  positions: [],
+  portfolioStats: null,
+  dashboardStats: null,
+  isLoading: false,
+  isLoadingPositions: false,
+  isLoadingDashboard: false,
+  error: null,
+  pagination: {
+    total: 0,
+    limit: 50,
+    offset: 0,
+    hasMore: false,
   },
 };
 
-export const useSettingsStore = create<SettingsStore>()(
+export const useTradeStore = create<TradeStore>()(
   devtools(
-    persist(
-      (set) => ({
-        settings: defaultSettings,
+    (set, get) => ({
+      ...initialState,
 
-        updateSettings: (updates) => {
-          set((state) => ({
-            settings: { ...state.settings, ...updates },
-          }));
-        },
+      // Fetch trades from API
+      fetchTrades: async (options = {}) => {
+        set({ isLoading: true, error: null });
+        
+        try {
+          const params = new URLSearchParams();
+          if (options.ticker) params.append('ticker', options.ticker);
+          if (options.limit) params.append('limit', options.limit.toString());
+          if (options.offset) params.append('offset', options.offset.toString());
 
-        updateNotificationSettings: (notifications) => {
-          set((state) => ({
-            settings: {
-              ...state.settings,
-              notifications: { ...state.settings.notifications, ...notifications },
-            },
-          }));
-        },
+          const response = await fetch(`/api/trades?${params}`);
+          
+          if (!response.ok) {
+            throw new Error(`Failed to fetch trades: ${response.status}`);
+          }
 
-        resetSettings: () => {
-          set({ settings: defaultSettings });
-        },
-      }),
-      {
-        name: 'settings-storage',
-        version: 1,
-      }
-    ),
-    { name: 'SettingsStore' }
+          const data = await response.json();
+          
+          set({
+            trades: data.trades,
+            pagination: data.pagination,
+            isLoading: false,
+          });
+        } catch (error) {
+          console.error('Error fetching trades:', error);
+          set({
+            error: error instanceof Error ? error.message : 'Failed to fetch trades',
+            isLoading: false,
+          });
+        }
+      },
+
+      // Add new trade
+      addTrade: async (tradeData) => {
+        set({ isLoading: true, error: null });
+        
+        try {
+          const response = await fetch('/api/trades', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(tradeData),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Failed to add trade: ${response.status}`);
+          }
+
+          const data = await response.json();
+          
+          // Refresh trades and positions
+          await Promise.all([
+            get().fetchTrades(),
+            get().fetchPositions(),
+            get().fetchDashboardData(),
+          ]);
+
+          set({ isLoading: false });
+        } catch (error) {
+          console.error('Error adding trade:', error);
+          set({
+            error: error instanceof Error ? error.message : 'Failed to add trade',
+            isLoading: false,
+          });
+          throw error; // Re-throw so UI can handle it
+        }
+      },
+
+      // Update trade
+      updateTrade: async (id, updates) => {
+        set({ isLoading: true, error: null });
+        
+        try {
+          const response = await fetch(`/api/trades/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Failed to update trade: ${response.status}`);
+          }
+
+          // Refresh data
+          await Promise.all([
+            get().fetchTrades(),
+            get().fetchPositions(),
+            get().fetchDashboardData(),
+          ]);
+
+          set({ isLoading: false });
+        } catch (error) {
+          console.error('Error updating trade:', error);
+          set({
+            error: error instanceof Error ? error.message : 'Failed to update trade',
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      // Delete trade
+      deleteTrade: async (id) => {
+        set({ isLoading: true, error: null });
+        
+        try {
+          const response = await fetch(`/api/trades/${id}`, {
+            method: 'DELETE',
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Failed to delete trade: ${response.status}`);
+          }
+
+          // Refresh data
+          await Promise.all([
+            get().fetchTrades(),
+            get().fetchPositions(),
+            get().fetchDashboardData(),
+          ]);
+
+          set({ isLoading: false });
+        } catch (error) {
+          console.error('Error deleting trade:', error);
+          set({
+            error: error instanceof Error ? error.message : 'Failed to delete trade',
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      // Fetch positions
+      fetchPositions: async (updatePrices = false) => {
+        set({ isLoadingPositions: true, error: null });
+        
+        try {
+          const params = updatePrices ? '?updatePrices=true' : '';
+          const response = await fetch(`/api/positions${params}`);
+          
+          if (!response.ok) {
+            throw new Error(`Failed to fetch positions: ${response.status}`);
+          }
+
+          const data = await response.json();
+          
+          set({
+            positions: data.positions,
+            portfolioStats: data.portfolioStats,
+            isLoadingPositions: false,
+          });
+        } catch (error) {
+          console.error('Error fetching positions:', error);
+          set({
+            error: error instanceof Error ? error.message : 'Failed to fetch positions',
+            isLoadingPositions: false,
+          });
+        }
+      },
+
+      // Update position prices
+      updatePositionPrices: async () => {
+        try {
+          const response = await fetch('/api/positions/update-prices', {
+            method: 'POST',
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Failed to update prices: ${response.status}`);
+          }
+
+          // Refresh positions
+          await get().fetchPositions();
+        } catch (error) {
+          console.error('Error updating prices:', error);
+          set({
+            error: error instanceof Error ? error.message : 'Failed to update prices',
+          });
+        }
+      },
+
+      // Fetch dashboard data
+      fetchDashboardData: async () => {
+        set({ isLoadingDashboard: true, error: null });
+        
+        try {
+          const response = await fetch('/api/dashboard');
+          
+          if (!response.ok) {
+            throw new Error(`Failed to fetch dashboard data: ${response.status}`);
+          }
+
+          const data = await response.json();
+          
+          set({
+            dashboardStats: data.stats,
+            isLoadingDashboard: false,
+          });
+        } catch (error) {
+          console.error('Error fetching dashboard data:', error);
+          set({
+            error: error instanceof Error ? error.message : 'Failed to fetch dashboard data',
+            isLoadingDashboard: false,
+          });
+        }
+      },
+
+      // Utility functions
+      setError: (error) => set({ error }),
+      clearError: () => set({ error: null }),
+      reset: () => set(initialState),
+    }),
+    { name: 'TradeStore' }
   )
 );

@@ -1,8 +1,8 @@
-// components/layout/MobileLayout.tsx
+// components/layout/MobileLayout.tsx (Updated with Interactive Dock)
 'use client'
 
 import { ReactNode } from 'react'
-import { BottomNavigation } from './BottomNavigation'
+import { InteractiveDock } from '@/components/ui/InteractiveDock'
 
 interface MobileLayoutProps {
   children: ReactNode
@@ -21,12 +21,17 @@ export function MobileLayout({ children, title, subtitle, showBackButton = false
           <div className='flex items-center justify-between'>
             <div className='flex items-center gap-3'>
               {showBackButton && (
-                <button onClick={onBackClick} className='text-gray-400 hover:text-white transition-colors'>
-                  ←
+                <button
+                  onClick={onBackClick}
+                  className='text-gray-400 hover:text-white transition-colors p-2 -ml-2 rounded-lg'
+                >
+                  <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 19l-7-7 7-7' />
+                  </svg>
                 </button>
               )}
               <div>
-                <h1 className='text-2xl font-bold'>{title}</h1>
+                <h1 className='text-2xl font-bold text-white'>{title}</h1>
                 {subtitle && <p className='text-gray-400 text-sm'>{subtitle}</p>}
               </div>
             </div>
@@ -39,10 +44,10 @@ export function MobileLayout({ children, title, subtitle, showBackButton = false
         </header>
 
         {/* Content */}
-        <main className='px-4 pb-20'>{children}</main>
+        <main className='px-4 pb-24'>{children}</main>
 
-        {/* Bottom Navigation */}
-        <BottomNavigation />
+        {/* Interactive Dock Navigation */}
+        <InteractiveDock />
       </div>
     </div>
   )

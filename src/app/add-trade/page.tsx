@@ -1,28 +1,41 @@
+// app/add-trade/page.tsx (Updated for Database)
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { MobileLayout } from '@/components/layout/MobileLayout'
 import { AddTradeForm } from '@/components/trade/AddTradeForm'
 import { useTradeStore } from '@/stores/useTradeStore'
-import { toast } from 'sonner' // You'll need to install this
 
 export default function AddTradePage() {
   const router = useRouter()
-  const { addTrade } = useTradeStore()
+  const { addTrade, isLoading } = useTradeStore()
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (data: any) => {
+  const handleSubmit = async (data: any) => {
     try {
-      addTrade({
-        ...data,
-        company: `${data.ticker} Company`, // This would come from stock API
-        currency: 'USD', // This would be detected from ticker
-      })
+      setError(null)
 
-      toast.success('Trade added successfully!')
+      // Prepare trade data for API
+      const tradeData = {
+        ticker: data.ticker,
+        company: data.company,
+        logo: data.logo || '',
+        action: data.action,
+        shares: data.shares,
+        pricePerShare: data.pricePerShare,
+        fee: data.fee || 0,
+        currency: data.currency,
+        date: data.date,
+      }
+
+      await addTrade(tradeData)
+
+      // Show success and navigate back
       router.push('/dashboard')
     } catch (error) {
-      toast.error('Failed to add trade')
       console.error('Error adding trade:', error)
+      setError(error instanceof Error ? error.message : 'Failed to add trade')
     }
   }
 
@@ -32,7 +45,23 @@ export default function AddTradePage() {
 
   return (
     <MobileLayout title='Add Trade' showBackButton onBackClick={handleCancel}>
-      <AddTradeForm onSubmit={handleSubmit} onCancel={handleCancel} />
+      <div className='space-y-4'>
+        {/* Error Message */}
+        {error && (
+          <div className='bg-red-500/20 border border-red-500 rounded-lg p-3'>
+            <p className='text-red-400 text-sm'>{error}</p>
+          </div>
+        )}
+
+        {/* Loading Overlay */}
+        {isLoading && (
+          <div className='bg-blue-500/20 border border-blue-500 rounded-lg p-3'>
+            <p className='text-blue-400 text-sm'>Adding trade...</p>
+          </div>
+        )}
+
+        <AddTradeForm onSubmit={handleSubmit} onCancel={handleCancel} defaultCommission={9.99} />
+      </div>
     </MobileLayout>
   )
 }

@@ -14,16 +14,16 @@ function StatCard({ title, value, subtitle, icon: Icon, trend = 'neutral' }: Sta
   const trendColors = {
     up: 'text-green-400',
     down: 'text-red-400',
-    neutral: 'text-gray-400',
+    neutral: 'theme-text-secondary  ',
   }
 
   return (
-    <div className='bg-gray-800/50 rounded-xl p-4 border border-gray-700'>
+    <div className='theme-card theme-card   p-4   '>
       <div className='flex items-center gap-2 mb-2'>
         <Icon className='w-4 h-4 text-blue-400' />
-        <span className='text-sm text-gray-400'>{title}</span>
+        <span className='text-sm theme-text-secondary  '>{title}</span>
       </div>
-      <div className='text-2xl font-bold text-white'>{value}</div>
+      <div className='text-2xl font-bold theme-text-primary  '>{value}</div>
       <div className={`text-sm ${trendColors[trend]}`}>{subtitle}</div>
     </div>
   )
@@ -50,9 +50,9 @@ export function StatsCards() {
 
   if (isLoadingDashboard) {
     return (
-      <div className='grid grid-cols-2 gap-4'>
+      <div className='theme-card grid grid-cols-2 gap-4'>
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className='bg-gray-800/50 rounded-xl p-4 border border-gray-700 animate-pulse'>
+          <div key={i} className='theme-card   p-4    animate-pulse'>
             <div className='h-4 bg-gray-700 rounded mb-2'></div>
             <div className='h-8 bg-gray-700 rounded mb-1'></div>
             <div className='h-3 bg-gray-700 rounded'></div>

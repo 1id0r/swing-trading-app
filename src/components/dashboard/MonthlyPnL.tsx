@@ -65,7 +65,7 @@ export function MonthlyPnL() {
 
   if (isLoading) {
     return (
-      <div className='bg-gray-800/50 rounded-xl border border-gray-700'>
+      <div className='theme-card     '>
         <div className='p-4 border-b border-gray-700'>
           <div className='h-6 bg-gray-700 rounded mb-2 w-1/3'></div>
           <div className='h-4 bg-gray-700 rounded w-1/2'></div>
@@ -89,17 +89,17 @@ export function MonthlyPnL() {
   }
 
   return (
-    <div className='bg-gray-800/50 rounded-xl border border-gray-700'>
+    <div className='theme-card     '>
       <div className='p-4 border-b border-gray-700'>
-        <h3 className='text-lg font-semibold text-white'>Monthly Summary</h3>
-        <p className='text-sm text-gray-400'>Track your trading performance</p>
+        <h3 className='text-lg font-semibold theme-text-primary  '>Monthly Summary</h3>
+        <p className='text-sm theme-text-secondary  '>Track your trading performance</p>
       </div>
 
       <div className='p-4'>
         {monthlyData.length === 0 ? (
           <div className='text-center py-8'>
-            <div className='text-gray-400 mb-2'>No trading data yet</div>
-            <div className='text-sm text-gray-500'>Start adding trades to see monthly performance</div>
+            <div className='theme-text-secondary   mb-2'>No trading data yet</div>
+            <div className='text-sm theme-text-secondary  '>Start adding trades to see monthly performance</div>
           </div>
         ) : (
           <div className='space-y-3'>
@@ -109,13 +109,13 @@ export function MonthlyPnL() {
                 className='flex items-center justify-between p-3 bg-gray-900/50 rounded-lg hover:bg-gray-900/70 transition-colors'
               >
                 <div>
-                  <div className='text-white font-medium'>{month.month}</div>
-                  <div className='text-sm text-gray-400'>{month.trades} trades</div>
+                  <div className='theme-text-primary   font-medium'>{month.month}</div>
+                  <div className='text-sm theme-text-secondary  '>{month.trades} trades</div>
                 </div>
                 <div className='text-right'>
                   <div
                     className={`font-bold ${
-                      month.profit > 0 ? 'text-green-400' : month.profit < 0 ? 'text-red-400' : 'text-gray-400'
+                      month.profit > 0 ? 'text-green-400' : month.profit < 0 ? 'text-red-400' : 'theme-text-secondary  '
                     }`}
                   >
                     {month.profit > 0 ? '+' : ''}
@@ -123,7 +123,7 @@ export function MonthlyPnL() {
                       ? settingsUtils.formatCurrency(month.profit, settings.displayCurrency)
                       : `$${month.profit.toFixed(2)}`}
                   </div>
-                  <div className='text-sm text-gray-400'>Net P&L</div>
+                  <div className='text-sm theme-text-secondary  '>Net P&L</div>
                 </div>
               </div>
             ))}

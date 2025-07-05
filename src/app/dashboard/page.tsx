@@ -38,10 +38,10 @@ export default function DashboardPage() {
 
         {/* Loading State */}
         {isLoadingDashboard && (
-          <div className='bg-gray-800/50 rounded-xl p-8 border border-gray-700'>
+          <div className='theme-card   p-8   '>
             <div className='text-center'>
               <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2'></div>
-              <p className='text-gray-400'>Loading dashboard...</p>
+              <p className='theme-text-secondary  '>Loading dashboard...</p>
             </div>
           </div>
         )}

@@ -23,15 +23,15 @@ export function TradeCard({ trade, onEdit, onDelete }: TradeCardProps) {
   const totalValue = trade.shares * trade.price
 
   return (
-    <div className='bg-gray-800/50 rounded-xl p-4 border border-gray-700 hover:bg-gray-800/70 transition-colors'>
+    <div className='theme-card   p-4    hover:bg-gray-800/70 transition-colors'>
       <div className='flex items-center justify-between mb-3'>
         <div className='flex items-center gap-3'>
-          <div className='w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm'>
+          <div className='w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center theme-text-primary   font-bold text-sm'>
             {trade.ticker.charAt(0)}
           </div>
           <div>
-            <div className='text-white font-medium'>{trade.ticker}</div>
-            <div className='text-sm text-gray-400'>{trade.company}</div>
+            <div className='theme-text-primary   font-medium'>{trade.ticker}</div>
+            <div className='text-sm theme-text-secondary  '>{trade.company}</div>
           </div>
         </div>
 
@@ -46,7 +46,7 @@ export function TradeCard({ trade, onEdit, onDelete }: TradeCardProps) {
           </div>
 
           {(onEdit || onDelete) && (
-            <button className='text-gray-400 hover:text-white p-1'>
+            <button className='theme-text-secondary   hover:theme-text-primary   p-1'>
               <MoreHorizontal className='w-4 h-4' />
             </button>
           )}
@@ -55,18 +55,22 @@ export function TradeCard({ trade, onEdit, onDelete }: TradeCardProps) {
 
       <div className='grid grid-cols-3 gap-4 text-sm'>
         <div>
-          <div className='text-gray-400'>Shares</div>
-          <div className='text-white font-medium'>{trade.shares.toLocaleString()}</div>
+          <div className='theme-text-secondary  '>Shares</div>
+          <div className='theme-text-primary   font-medium'>{trade.shares.toLocaleString()}</div>
         </div>
         <div>
-          <div className='text-gray-400'>Price</div>
-          <div className='text-white font-medium'>${trade.price.toFixed(2)}</div>
+          <div className='theme-text-secondary  '>Price</div>
+          <div className='theme-text-primary   font-medium'>${trade.price.toFixed(2)}</div>
         </div>
         <div>
-          <div className='text-gray-400'>P&L</div>
+          <div className='theme-text-secondary  '>P&L</div>
           <div
             className={`font-medium ${
-              trade.profit !== undefined ? (trade.profit > 0 ? 'text-green-400' : 'text-red-400') : 'text-gray-400'
+              trade.profit !== undefined
+                ? trade.profit > 0
+                  ? 'text-green-400'
+                  : 'text-red-400'
+                : 'theme-text-secondary  '
             }`}
           >
             {trade.profit !== undefined ? `$${trade.profit.toFixed(2)}` : 'Open'}
@@ -74,7 +78,7 @@ export function TradeCard({ trade, onEdit, onDelete }: TradeCardProps) {
         </div>
       </div>
 
-      <div className='mt-3 pt-3 border-t border-gray-700 flex justify-between text-xs text-gray-400'>
+      <div className='mt-3 pt-3 border-t border-gray-700 flex justify-between text-xs theme-text-secondary  '>
         <span>{new Date(trade.date).toLocaleDateString()}</span>
         <span>Total: ${totalValue.toFixed(2)}</span>
       </div>

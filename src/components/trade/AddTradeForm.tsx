@@ -130,7 +130,7 @@ export function AddTradeForm({ onSubmit, onCancel, defaultCommission = 9.99 }: A
       <form onSubmit={handleSubmit(handleFormSubmit)} className='space-y-4'>
         {/* Stock Search with Autocomplete */}
         <div className='space-y-2'>
-          <label className='text-sm font-medium text-gray-400'>Stock</label>
+          <label className='text-sm font-medium theme-text-secondary  '>Stock</label>
           <StockAutocomplete
             onSelect={handleStockSelect}
             value={watchedValues.ticker || ''}
@@ -140,7 +140,7 @@ export function AddTradeForm({ onSubmit, onCancel, defaultCommission = 9.99 }: A
 
         {/* Selected Stock Display */}
         {selectedStock && (
-          <div className='bg-gray-800/30 rounded-lg p-3 border border-gray-700'>
+          <div className='theme-card rounded-lg p-3   '>
             <div className='flex items-center gap-3'>
               <div className='w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0'>
                 {selectedStock.logo ? (
@@ -159,7 +159,7 @@ export function AddTradeForm({ onSubmit, onCancel, defaultCommission = 9.99 }: A
                   />
                 ) : null}
                 <span
-                  className={`text-white font-bold text-sm ${selectedStock.logo ? 'hidden' : 'flex'}`}
+                  className={`theme-text-primary   font-bold text-sm ${selectedStock.logo ? 'hidden' : 'flex'}`}
                   style={{ display: selectedStock.logo ? 'none' : 'flex' }}
                 >
                   {selectedStock.symbol.charAt(0)}
@@ -168,14 +168,14 @@ export function AddTradeForm({ onSubmit, onCancel, defaultCommission = 9.99 }: A
 
               <div className='flex-1'>
                 <div className='flex items-center gap-2'>
-                  <span className='text-white font-medium'>{selectedStock.symbol}</span>
-                  <Building2 className='w-3 h-3 text-gray-400' />
+                  <span className='theme-text-primary   font-medium'>{selectedStock.symbol}</span>
+                  <Building2 className='w-3 h-3 theme-text-secondary  ' />
                 </div>
-                <div className='text-sm text-gray-400 truncate'>{selectedStock.name}</div>
+                <div className='text-sm theme-text-secondary   truncate'>{selectedStock.name}</div>
               </div>
 
               <div className='text-right'>
-                <div className='text-white font-medium'>${selectedStock.currentPrice.toFixed(2)}</div>
+                <div className='theme-text-primary   font-medium'>${selectedStock.currentPrice.toFixed(2)}</div>
                 <div className={`text-xs ${selectedStock.change > 0 ? 'text-green-400' : 'text-red-400'}`}>
                   {selectedStock.change > 0 ? '+' : ''}
                   {selectedStock.changePercent.toFixed(2)}%
@@ -187,13 +187,15 @@ export function AddTradeForm({ onSubmit, onCancel, defaultCommission = 9.99 }: A
 
         {/* Action Toggle */}
         <div className='space-y-2'>
-          <label className='text-sm font-medium text-gray-400'>Action</label>
-          <div className='flex bg-gray-800/50 border border-gray-700 rounded-lg p-1'>
+          <label className='text-sm font-medium theme-text-secondary  '>Action</label>
+          <div className='flex theme-card    rounded-lg p-1'>
             <button
               type='button'
               onClick={() => setValue('action', 'BUY')}
               className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
-                watchedValues.action === 'BUY' ? 'bg-green-600 text-white' : 'text-gray-400 hover:text-white'
+                watchedValues.action === 'BUY'
+                  ? 'bg-green-600 theme-text-primary  '
+                  : 'theme-text-secondary   hover:theme-text-primary  '
               }`}
             >
               BUY
@@ -202,7 +204,9 @@ export function AddTradeForm({ onSubmit, onCancel, defaultCommission = 9.99 }: A
               type='button'
               onClick={() => setValue('action', 'SELL')}
               className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
-                watchedValues.action === 'SELL' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'
+                watchedValues.action === 'SELL'
+                  ? 'bg-red-600 theme-text-primary  '
+                  : 'theme-text-secondary   hover:theme-text-primary  '
               }`}
             >
               SELL
@@ -213,7 +217,7 @@ export function AddTradeForm({ onSubmit, onCancel, defaultCommission = 9.99 }: A
         {/* Trade Details Grid */}
         <div className='grid grid-cols-2 gap-4'>
           <div className='space-y-2'>
-            <label className='text-sm font-medium text-gray-400'>Shares</label>
+            <label className='text-sm font-medium theme-text-secondary  '>Shares</label>
             <input
               {...register('shares', {
                 valueAsNumber: true,
@@ -222,13 +226,13 @@ export function AddTradeForm({ onSubmit, onCancel, defaultCommission = 9.99 }: A
               type='number'
               placeholder='100'
               min='1'
-              className='w-full bg-gray-800/50 border border-gray-700 rounded-lg p-3 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none'
+              className='w-full theme-card    rounded-lg p-3 theme-text-primary   placeholder-gray-400 focus:border-blue-500 focus:outline-none'
             />
             {errors.shares && <p className='text-sm text-red-400'>{errors.shares.message}</p>}
           </div>
 
           <div className='space-y-2'>
-            <label className='text-sm font-medium text-gray-400'>Price per Share</label>
+            <label className='text-sm font-medium theme-text-secondary  '>Price per Share</label>
             <input
               {...register('pricePerShare', {
                 valueAsNumber: true,
@@ -238,7 +242,7 @@ export function AddTradeForm({ onSubmit, onCancel, defaultCommission = 9.99 }: A
               placeholder='185.30'
               step='0.01'
               min='0.01'
-              className='w-full bg-gray-800/50 border border-gray-700 rounded-lg p-3 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none'
+              className='w-full theme-card    rounded-lg p-3 theme-text-primary   placeholder-gray-400 focus:border-blue-500 focus:outline-none'
             />
             {errors.pricePerShare && <p className='text-sm text-red-400'>{errors.pricePerShare.message}</p>}
           </div>
@@ -246,18 +250,18 @@ export function AddTradeForm({ onSubmit, onCancel, defaultCommission = 9.99 }: A
 
         {/* Date */}
         <div className='space-y-2'>
-          <label className='text-sm font-medium text-gray-400'>Trade Date</label>
+          <label className='text-sm font-medium theme-text-secondary  '>Trade Date</label>
           <input
             {...register('date')}
             type='date'
-            className='w-full bg-gray-800/50 border border-gray-700 rounded-lg p-3 text-white focus:border-blue-500 focus:outline-none'
+            className='w-full theme-card    rounded-lg p-3 theme-text-primary   focus:border-blue-500 focus:outline-none'
           />
           {errors.date && <p className='text-sm text-red-400'>{errors.date.message}</p>}
         </div>
 
         {/* Commission Fee */}
         <div className='space-y-2'>
-          <label className='text-sm font-medium text-gray-400'>Commission</label>
+          <label className='text-sm font-medium theme-text-secondary  '>Commission</label>
           <input
             {...register('fee', {
               valueAsNumber: true,
@@ -267,33 +271,35 @@ export function AddTradeForm({ onSubmit, onCancel, defaultCommission = 9.99 }: A
             placeholder='9.99'
             step='0.01'
             min='0'
-            className='w-full bg-gray-800/50 border border-gray-700 rounded-lg p-3 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none'
+            className='w-full theme-card    rounded-lg p-3 theme-text-primary   placeholder-gray-400 focus:border-blue-500 focus:outline-none'
           />
           {errors.fee && <p className='text-sm text-red-400'>{errors.fee.message}</p>}
         </div>
 
         {/* Trade Summary - Only show if we have valid numbers */}
         {selectedStock && shares > 0 && pricePerShare > 0 && (
-          <div className='bg-gray-800/50 rounded-xl p-4 border border-gray-700'>
+          <div className='theme-card   p-4   '>
             <div className='flex items-center gap-2 mb-3'>
               <Calculator className='w-4 h-4 text-blue-400' />
-              <h4 className='text-white font-medium'>Trade Summary</h4>
+              <h4 className='theme-text-primary   font-medium'>Trade Summary</h4>
             </div>
             <div className='space-y-2 text-sm'>
               <div className='flex justify-between'>
-                <span className='text-gray-400'>
+                <span className='theme-text-secondary  '>
                   {shares.toLocaleString()} × ${pricePerShare.toFixed(2)}:
                 </span>
-                <span className='text-white'>${totalValue.toFixed(2)}</span>
+                <span className='theme-text-primary  '>${totalValue.toFixed(2)}</span>
               </div>
               <div className='flex justify-between'>
-                <span className='text-gray-400'>Commission:</span>
-                <span className='text-white'>${fee.toFixed(2)}</span>
+                <span className='theme-text-secondary  '>Commission:</span>
+                <span className='theme-text-primary  '>${fee.toFixed(2)}</span>
               </div>
               <hr className='border-gray-700' />
               <div className='flex justify-between font-medium'>
-                <span className='text-gray-400'>Total {watchedValues.action === 'BUY' ? 'Cost' : 'Received'}:</span>
-                <span className='text-white'>${totalCost.toFixed(2)}</span>
+                <span className='theme-text-secondary  '>
+                  Total {watchedValues.action === 'BUY' ? 'Cost' : 'Received'}:
+                </span>
+                <span className='theme-text-primary  '>${totalCost.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -304,14 +310,14 @@ export function AddTradeForm({ onSubmit, onCancel, defaultCommission = 9.99 }: A
           <button
             type='button'
             onClick={onCancel}
-            className='flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg font-medium transition-colors'
+            className='flex-1 bg-gray-700 hover:bg-gray-600 theme-text-primary   py-3 rounded-lg font-medium transition-colors'
           >
             Cancel
           </button>
           <button
             type='submit'
             disabled={!selectedStock || shares <= 0 || pricePerShare <= 0}
-            className='flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-3 rounded-lg font-medium transition-colors'
+            className='flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed theme-text-primary   py-3 rounded-lg font-medium transition-colors'
           >
             Add Trade
           </button>

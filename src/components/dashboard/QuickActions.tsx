@@ -38,10 +38,10 @@ export function QuickActions() {
         <button
           key={action.label}
           onClick={() => router.push(action.href)}
-          className={`flex items-center gap-3 p-4 rounded-xl transition-colors ${
+          className={` theme-button-primary flex items-center gap-3 p-4   transition-colors ${
             action.variant === 'primary'
-              ? 'bg-blue-600 hover:bg-blue-700 text-white'
-              : 'bg-gray-800/50 hover:bg-gray-700/50 text-white border border-gray-700'
+              ? 'bg-blue-600 hover:bg-blue-700 theme-text-primary  '
+              : 'theme-card hover:bg-gray-700/50 theme-text-primary     '
           }`}
         >
           <action.icon className='w-5 h-5' />

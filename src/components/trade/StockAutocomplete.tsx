@@ -118,7 +118,7 @@ export function StockAutocomplete({
   return (
     <div className='relative'>
       <div className='relative'>
-        <Search className='absolute left-3 top-3 w-4 h-4 text-gray-400' />
+        <Search className='absolute left-3 top-3 w-4 h-4 theme-text-secondary  ' />
         <input
           ref={inputRef}
           type='text'
@@ -128,12 +128,12 @@ export function StockAutocomplete({
           onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder={placeholder}
-          className={`w-full bg-gray-800/50 border rounded-lg p-3 pl-10 pr-10 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none uppercase ${
+          className={`w-full theme-card border rounded-lg p-3 pl-10 pr-10 theme-text-primary   placeholder-gray-400 focus:border-blue-500 focus:outline-none uppercase ${
             error ? 'border-red-500' : 'border-gray-700'
           }`}
           autoComplete='off'
         />
-        {isLoading && <Loader2 className='absolute right-3 top-3 w-4 h-4 text-gray-400 animate-spin' />}
+        {isLoading && <Loader2 className='absolute right-3 top-3 w-4 h-4 theme-text-secondary   animate-spin' />}
       </div>
 
       {error && <p className='text-sm text-red-400 mt-1'>{error}</p>}
@@ -142,10 +142,10 @@ export function StockAutocomplete({
       {isOpen && (
         <div
           ref={optionsRef}
-          className='absolute top-full left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto'
+          className='absolute top-full left-0 right-0 mt-1 bg-gray-800    rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto'
         >
           {options.length === 0 && !isLoading && (
-            <div className='p-4 text-center text-gray-400'>No stocks found for "{query}"</div>
+            <div className='p-4 text-center theme-text-secondary  '>No stocks found for "{query}"</div>
           )}
 
           {options.map((stock, index) => (
@@ -176,7 +176,7 @@ export function StockAutocomplete({
                     />
                   ) : null}
                   <span
-                    className={`text-white font-bold text-sm ${stock.logo ? 'hidden' : 'flex'}`}
+                    className={`theme-text-primary   font-bold text-sm ${stock.logo ? 'hidden' : 'flex'}`}
                     style={{ display: stock.logo ? 'none' : 'flex' }}
                   >
                     {stock.symbol.charAt(0)}
@@ -186,12 +186,12 @@ export function StockAutocomplete({
                 {/* Stock Info */}
                 <div className='flex-1 min-w-0'>
                   <div className='flex items-center gap-2'>
-                    <span className='text-white font-medium'>{stock.symbol}</span>
-                    <span className='text-gray-400 truncate text-sm'>{stock.name}</span>
+                    <span className='theme-text-primary   font-medium'>{stock.symbol}</span>
+                    <span className='theme-text-secondary   truncate text-sm'>{stock.name}</span>
                   </div>
 
                   <div className='flex items-center gap-2 mt-1'>
-                    <span className='text-white font-medium'>${stock.currentPrice.toFixed(2)}</span>
+                    <span className='theme-text-primary   font-medium'>${stock.currentPrice.toFixed(2)}</span>
                     {stock.change !== 0 && (
                       <div
                         className={`flex items-center gap-1 text-xs ${

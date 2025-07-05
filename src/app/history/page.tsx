@@ -29,13 +29,13 @@ export default function HistoryPage() {
         {/* Search and Filter */}
         <div className='space-y-3'>
           <div className='relative'>
-            <Search className='absolute left-3 top-3 w-4 h-4 text-gray-400' />
+            <Search className='absolute left-3 top-3 w-4 h-4 theme-text-secondary  ' />
             <input
               type='text'
               placeholder='Search trades...'
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className='w-full bg-gray-800/50 border border-gray-700 rounded-lg p-3 pl-10 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none'
+              className='w-full theme-card    rounded-lg p-3 pl-10 theme-text-primary   placeholder-gray-400 focus:border-blue-500 focus:outline-none'
             />
           </div>
 
@@ -46,8 +46,8 @@ export default function HistoryPage() {
                 onClick={() => setFilter(filterOption)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   filter === filterOption
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-800/50 text-gray-400 hover:text-white border border-gray-700'
+                    ? 'bg-blue-600 theme-text-primary  '
+                    : 'theme-card theme-text-secondary   hover:theme-text-primary     '
                 }`}
               >
                 {filterOption}
@@ -60,8 +60,8 @@ export default function HistoryPage() {
         <div className='space-y-3'>
           {filteredTrades.length === 0 ? (
             <div className='text-center py-12'>
-              <div className='text-gray-400 mb-2'>No trades found</div>
-              <div className='text-sm text-gray-500'>
+              <div className='theme-text-secondary   mb-2'>No trades found</div>
+              <div className='text-sm theme-text-secondary  '>
                 {trades.length === 0 ? 'Add your first trade to get started' : 'Try adjusting your search or filter'}
               </div>
             </div>

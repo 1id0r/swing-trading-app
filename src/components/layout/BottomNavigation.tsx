@@ -42,7 +42,7 @@ export function BottomNavigation() {
                     ? 'text-blue-400 hover:text-blue-300'
                     : isActive
                     ? 'text-blue-400'
-                    : 'text-gray-400 hover:text-white'
+                    : 'theme-text-secondary   hover:theme-text-primary  '
                 }`}
               >
                 <item.icon className={`w-5 h-5 ${isAddButton ? 'w-6 h-6' : ''}`} />

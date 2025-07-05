@@ -1,4 +1,4 @@
-// app/settings/page.tsx (Fixed Controlled Inputs)
+// app/settings/page.tsx (Futuristic Version)
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -95,11 +95,11 @@ export default function SettingsPage() {
   if (isLoading && !settings) {
     return (
       <MobileLayout title='Settings' subtitle='Personalize your app'>
-        <div className='space-y-6'>
+        <div className='space-y-8'>
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className='bg-gray-800/50 rounded-xl p-4 border border-gray-700 animate-pulse'>
-              <div className='h-4 bg-gray-700 rounded mb-2 w-1/3'></div>
-              <div className='h-8 bg-gray-700 rounded'></div>
+            <div key={i} className='theme-card p-6 animate-pulse'>
+              <div className='h-5 bg-gray-700 rounded-xl mb-3 w-1/3'></div>
+              <div className='h-12 bg-gray-700 rounded-xl'></div>
             </div>
           ))}
         </div>
@@ -109,46 +109,50 @@ export default function SettingsPage() {
 
   return (
     <MobileLayout title='Settings' subtitle='Personalize your app'>
-      <div className='space-y-6'>
+      <div className='space-y-8'>
         {/* Error Message */}
         {error && (
-          <div className='bg-red-500/20 border border-red-500 rounded-lg p-3'>
-            <p className='text-red-400 text-sm'>{error}</p>
+          <div className='theme-card !border-red-500/30 !bg-red-500/10 p-4'>
+            <p className='text-red-400 text-sm font-medium'>{error}</p>
           </div>
         )}
 
         {/* Save Changes Bar */}
         {hasChanges && (
-          <div className='bg-blue-500/20 border border-blue-500 rounded-lg p-3 flex items-center justify-between'>
-            <p className='text-blue-400 text-sm'>You have unsaved changes</p>
-            <div className='flex gap-2'>
-              <button onClick={handleReset} className='text-gray-400 hover:text-white text-sm px-3 py-1 rounded'>
-                Reset
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className='bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white text-sm px-3 py-1 rounded flex items-center gap-1'
-              >
-                {saving ? <RefreshCw className='w-3 h-3 animate-spin' /> : <Save className='w-3 h-3' />}
-                Save
-              </button>
+          <div className='theme-card !border-blue-500/30 !bg-blue-500/10 p-4'>
+            <div className='flex items-center justify-between'>
+              <p className='text-blue-400 text-sm font-medium'>You have unsaved changes</p>
+              <div className='flex gap-3'>
+                <button onClick={handleReset} className='theme-button-secondary !py-2 !px-4 text-sm'>
+                  Reset
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className='theme-button-primary !py-2 !px-4 text-sm flex items-center gap-2'
+                >
+                  {saving ? <RefreshCw className='w-3 h-3 animate-spin' /> : <Save className='w-3 h-3' />}
+                  Save
+                </button>
+              </div>
             </div>
           </div>
         )}
 
         {/* Theme Settings */}
-        <div className='bg-gray-800/50 rounded-xl border border-gray-700'>
-          <div className='p-4 border-b border-gray-700'>
-            <div className='flex items-center gap-2'>
-              <Palette className='w-5 h-5 text-blue-400' />
-              <h3 className='text-lg font-semibold text-white'>Appearance</h3>
+        <div className='theme-card'>
+          <div className='p-6 border-b theme-border'>
+            <div className='flex items-center gap-3'>
+              <div className='p-2 rounded-xl bg-blue-500/10'>
+                <Palette className='w-5 h-5 text-blue-400' />
+              </div>
+              <h3 className='futuristic-section-title !mb-0'>Appearance</h3>
             </div>
           </div>
 
-          <div className='p-4'>
-            <label className='text-sm font-medium text-gray-400 mb-3 block'>Theme</label>
-            <div className='grid grid-cols-3 gap-3'>
+          <div className='p-6'>
+            <label className='text-sm font-semibold theme-text-primary mb-4 block'>Theme</label>
+            <div className='grid grid-cols-3 gap-4'>
               {[
                 { value: 'light', label: 'Light', icon: Sun },
                 { value: 'dark', label: 'Dark', icon: Moon },
@@ -157,14 +161,10 @@ export default function SettingsPage() {
                 <button
                   key={value}
                   onClick={() => handleChange('theme', value)}
-                  className={`p-3 rounded-lg border-2 transition-colors ${
-                    localSettings.theme === value
-                      ? 'border-blue-500 bg-blue-500/20'
-                      : 'border-gray-700 hover:border-gray-600'
-                  }`}
+                  className={`theme-selector-button ${localSettings.theme === value ? 'active' : ''}`}
                 >
-                  <Icon className='w-5 h-5 mx-auto mb-1 text-gray-400' />
-                  <div className='text-sm text-white'>{label}</div>
+                  <Icon className='w-6 h-6 mx-auto mb-2 opacity-80' />
+                  <div className='text-sm font-medium theme-text-primary'>{label}</div>
                 </button>
               ))}
             </div>
@@ -172,21 +172,23 @@ export default function SettingsPage() {
         </div>
 
         {/* Currency Settings */}
-        <div className='bg-gray-800/50 rounded-xl border border-gray-700'>
-          <div className='p-4 border-b border-gray-700'>
-            <div className='flex items-center gap-2'>
-              <Globe className='w-5 h-5 text-blue-400' />
-              <h3 className='text-lg font-semibold text-white'>Currency</h3>
+        <div className='theme-card'>
+          <div className='p-6 border-b theme-border'>
+            <div className='flex items-center gap-3'>
+              <div className='p-2 rounded-xl bg-blue-500/10'>
+                <Globe className='w-5 h-5 text-blue-400' />
+              </div>
+              <h3 className='futuristic-section-title !mb-0'>Currency</h3>
             </div>
           </div>
 
-          <div className='p-4 space-y-4'>
+          <div className='p-6 space-y-6'>
             <div>
-              <label className='text-sm font-medium text-gray-400 mb-2 block'>Default Currency</label>
+              <label className='text-sm font-semibold theme-text-primary mb-3 block'>Default Currency</label>
               <select
                 value={localSettings.defaultCurrency}
                 onChange={(e) => handleChange('defaultCurrency', e.target.value)}
-                className='w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white focus:border-blue-500 focus:outline-none'
+                className='theme-select w-full'
               >
                 {currencies.map((currency) => (
                   <option key={currency.code} value={currency.code}>
@@ -194,15 +196,17 @@ export default function SettingsPage() {
                   </option>
                 ))}
               </select>
-              <p className='text-xs text-gray-500 mt-1'>Currency will be auto-detected from stock exchange</p>
+              <p className='text-xs theme-text-secondary mt-2 opacity-80'>
+                Currency will be auto-detected from stock exchange
+              </p>
             </div>
 
             <div>
-              <label className='text-sm font-medium text-gray-400 mb-2 block'>Display Currency</label>
+              <label className='text-sm font-semibold theme-text-primary mb-3 block'>Display Currency</label>
               <select
                 value={localSettings.displayCurrency}
                 onChange={(e) => handleChange('displayCurrency', e.target.value)}
-                className='w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white focus:border-blue-500 focus:outline-none'
+                className='theme-select w-full'
               >
                 {currencies.map((currency) => (
                   <option key={currency.code} value={currency.code}>
@@ -210,42 +214,46 @@ export default function SettingsPage() {
                   </option>
                 ))}
               </select>
-              <p className='text-xs text-gray-500 mt-1'>Currency for portfolio summaries and reports</p>
+              <p className='text-xs theme-text-secondary mt-2 opacity-80'>
+                Currency for portfolio summaries and reports
+              </p>
             </div>
           </div>
         </div>
 
         {/* Trading Settings */}
-        <div className='bg-gray-800/50 rounded-xl border border-gray-700'>
-          <div className='p-4 border-b border-gray-700'>
-            <div className='flex items-center gap-2'>
-              <DollarSign className='w-5 h-5 text-blue-400' />
-              <h3 className='text-lg font-semibold text-white'>Trading</h3>
+        <div className='theme-card'>
+          <div className='p-6 border-b theme-border'>
+            <div className='flex items-center gap-3'>
+              <div className='p-2 rounded-xl bg-blue-500/10'>
+                <DollarSign className='w-5 h-5 text-blue-400' />
+              </div>
+              <h3 className='futuristic-section-title !mb-0'>Trading</h3>
             </div>
           </div>
 
-          <div className='p-4 space-y-4'>
+          <div className='p-6 space-y-6'>
             <div>
-              <label className='text-sm font-medium text-gray-400 mb-2 block'>Default Commission Fee</label>
+              <label className='text-sm font-semibold theme-text-primary mb-3 block'>Default Commission Fee</label>
               <div className='relative'>
-                <DollarSign className='absolute left-3 top-3 w-4 h-4 text-gray-400' />
+                <DollarSign className='absolute left-4 top-4 w-4 h-4 theme-text-secondary opacity-60' />
                 <input
                   type='number'
                   value={localSettings.defaultFee}
                   onChange={(e) => handleChange('defaultFee', parseFloat(e.target.value) || 0)}
                   step='0.01'
                   min='0'
-                  className='w-full bg-gray-800 border border-gray-700 rounded-lg p-3 pl-10 text-white focus:border-blue-500 focus:outline-none'
+                  className='theme-input w-full pl-12'
                   placeholder='9.99'
                 />
               </div>
-              <p className='text-xs text-gray-500 mt-1'>Default commission for new trades</p>
+              <p className='text-xs theme-text-secondary mt-2 opacity-80'>Default commission for new trades</p>
             </div>
 
             <div>
-              <label className='text-sm font-medium text-gray-400 mb-2 block'>Capital Gains Tax Rate</label>
+              <label className='text-sm font-semibold theme-text-primary mb-3 block'>Capital Gains Tax Rate</label>
               <div className='relative'>
-                <Percent className='absolute left-3 top-3 w-4 h-4 text-gray-400' />
+                <Percent className='absolute left-4 top-4 w-4 h-4 theme-text-secondary opacity-60' />
                 <input
                   type='number'
                   value={localSettings.taxRate}
@@ -253,72 +261,72 @@ export default function SettingsPage() {
                   step='0.1'
                   min='0'
                   max='100'
-                  className='w-full bg-gray-800 border border-gray-700 rounded-lg p-3 pl-10 text-white focus:border-blue-500 focus:outline-none'
+                  className='theme-input w-full pl-12'
                   placeholder='25.0'
                 />
               </div>
-              <p className='text-xs text-gray-500 mt-1'>Tax rate for calculating after-tax P&L (0-100%)</p>
+              <p className='text-xs theme-text-secondary mt-2 opacity-80'>
+                Tax rate for calculating after-tax P&L (0-100%)
+              </p>
             </div>
           </div>
         </div>
 
         {/* Date Format */}
-        <div className='bg-gray-800/50 rounded-xl border border-gray-700'>
-          <div className='p-4 border-b border-gray-700'>
-            <div className='flex items-center gap-2'>
-              <Calendar className='w-5 h-5 text-blue-400' />
-              <h3 className='text-lg font-semibold text-white'>Date Format</h3>
+        <div className='theme-card'>
+          <div className='p-6 border-b theme-border'>
+            <div className='flex items-center gap-3'>
+              <div className='p-2 rounded-xl bg-blue-500/10'>
+                <Calendar className='w-5 h-5 text-blue-400' />
+              </div>
+              <h3 className='futuristic-section-title !mb-0'>Date Format</h3>
             </div>
           </div>
 
-          <div className='p-4'>
+          <div className='p-6'>
             <select
               value={localSettings.dateFormat}
               onChange={(e) => handleChange('dateFormat', e.target.value)}
-              className='w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white focus:border-blue-500 focus:outline-none'
+              className='theme-select w-full'
             >
               <option value='MM/dd/yyyy'>MM/DD/YYYY (US)</option>
               <option value='dd/MM/yyyy'>DD/MM/YYYY (EU)</option>
               <option value='yyyy-MM-dd'>YYYY-MM-DD (ISO)</option>
             </select>
-            <p className='text-xs text-gray-500 mt-1'>Example: {new Date().toLocaleDateString('en-US')}</p>
+            <p className='text-xs theme-text-secondary mt-2 opacity-80'>
+              Example: {new Date().toLocaleDateString('en-US')}
+            </p>
           </div>
         </div>
 
         {/* Notifications */}
-        <div className='bg-gray-800/50 rounded-xl border border-gray-700'>
-          <div className='p-4 border-b border-gray-700'>
-            <div className='flex items-center gap-2'>
-              <Bell className='w-5 h-5 text-blue-400' />
-              <h3 className='text-lg font-semibold text-white'>Notifications</h3>
+        <div className='theme-card'>
+          <div className='p-6 border-b theme-border'>
+            <div className='flex items-center gap-3'>
+              <div className='p-2 rounded-xl bg-blue-500/10'>
+                <Bell className='w-5 h-5 text-blue-400' />
+              </div>
+              <h3 className='futuristic-section-title !mb-0'>Notifications</h3>
             </div>
           </div>
 
-          <div className='p-4 space-y-3'>
+          <div className='p-6 space-y-5'>
             {[
               { key: 'notifyTrades', label: 'Trade confirmations', desc: 'Get notified when trades are added' },
               { key: 'notifyPriceAlerts', label: 'Price alerts', desc: 'Notifications for price targets' },
               { key: 'notifyMonthly', label: 'Monthly reports', desc: 'Monthly performance summaries' },
             ].map(({ key, label, desc }) => (
-              <div key={key} className='flex items-center justify-between'>
-                <div>
-                  <div className='text-white font-medium'>{label}</div>
-                  <div className='text-sm text-gray-400'>{desc}</div>
+              <div key={key} className='flex items-center justify-between py-2'>
+                <div className='flex-1'>
+                  <div className='theme-text-primary font-medium'>{label}</div>
+                  <div className='text-sm theme-text-secondary opacity-80'>{desc}</div>
                 </div>
                 <button
                   onClick={() =>
                     handleChange(key as keyof typeof localSettings, !localSettings[key as keyof typeof localSettings])
                   }
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    localSettings[key as keyof typeof localSettings] ? 'bg-blue-600' : 'bg-gray-600'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      localSettings[key as keyof typeof localSettings] ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
+                  className={`futuristic-toggle ${localSettings[key as keyof typeof localSettings] ? 'active' : ''}`}
+                />
               </div>
             ))}
           </div>
@@ -329,7 +337,7 @@ export default function SettingsPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className='w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2'
+            className='theme-button-primary w-full flex items-center justify-center gap-2'
           >
             {saving ? <RefreshCw className='w-4 h-4 animate-spin' /> : <Save className='w-4 h-4' />}
             {saving ? 'Saving...' : 'Save Changes'}

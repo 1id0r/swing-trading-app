@@ -241,6 +241,294 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
+.futuristic-action-button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background: linear-gradient(135deg,
+      var(--bg-secondary) 0%,
+      rgba(59, 130, 246, 0.03) 100%);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  min-height: 80px;
+}
+
+.futuristic-action-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg,
+      rgba(59, 130, 246, 0.1) 0%,
+      transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.futuristic-action-button:hover::before {
+  opacity: 1;
+}
+
+.futuristic-action-button:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 8px 24px rgba(59, 130, 246, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* BUY Button Active State */
+.futuristic-action-button.buy-active {
+  border-color: #10b981;
+  background: linear-gradient(135deg,
+      rgba(16, 185, 129, 0.1) 0%,
+      rgba(16, 185, 129, 0.05) 100%);
+  color: #10b981;
+  transform: translateY(-3px) scale(1.05);
+  box-shadow:
+    0 12px 28px rgba(16, 185, 129, 0.25),
+    0 4px 12px rgba(16, 185, 129, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.futuristic-action-button.buy-active::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 12px #10b981;
+}
+
+/* SELL Button Active State */
+.futuristic-action-button.sell-active {
+  border-color: #ef4444;
+  background: linear-gradient(135deg,
+      rgba(239, 68, 68, 0.1) 0%,
+      rgba(239, 68, 68, 0.05) 100%);
+  color: #ef4444;
+  transform: translateY(-3px) scale(1.05);
+  box-shadow:
+    0 12px 28px rgba(239, 68, 68, 0.25),
+    0 4px 12px rgba(239, 68, 68, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.futuristic-action-button.sell-active::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  box-shadow: 0 0 12px #ef4444;
+}
+
+/* Enhanced Form Section Styling */
+.trade-form-section {
+  background: var(--bg-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.trade-form-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg,
+      rgba(59, 130, 246, 0.02) 0%,
+      transparent 100%);
+  pointer-events: none;
+}
+
+.trade-form-section:hover {
+  border-color: rgba(59, 130, 246, 0.2);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1);
+}
+
+/* Trade Summary Special Styling */
+.trade-summary-card {
+  background: linear-gradient(135deg,
+      rgba(59, 130, 246, 0.05) 0%,
+      rgba(59, 130, 246, 0.02) 100%);
+  border: 1.5px solid rgba(59, 130, 246, 0.2);
+  border-radius: 24px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.trade-summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg,
+      rgba(59, 130, 246, 0.1) 0%,
+      transparent 50%,
+      rgba(59, 130, 246, 0.05) 100%);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.trade-summary-card .summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+  transition: all 0.3s ease;
+}
+
+.trade-summary-card .summary-row:hover {
+  background: rgba(59, 130, 246, 0.05);
+  margin: 0 -12px;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.trade-summary-card .summary-row:last-child {
+  border-bottom: none;
+  font-weight: 700;
+  font-size: 1.1em;
+}
+
+/* Enhanced Input Focus States */
+.theme-input:focus {
+  border-color: #3b82f6;
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.1),
+    0 4px 16px rgba(59, 130, 246, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+/* Date Input Special Styling */
+.theme-input[type="date"] {
+  color-scheme: dark;
+  font-family: inherit;
+}
+
+.light .theme-input[type="date"] {
+  color-scheme: light;
+}
+
+/* Disabled Button Styling */
+.theme-button-primary:disabled {
+  background: rgba(107, 114, 128, 0.5) !important;
+  border-color: rgba(107, 114, 128, 0.3) !important;
+  color: rgba(156, 163, 175, 0.8) !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.theme-button-primary:disabled::before {
+  display: none !important;
+}
+
+.theme-button-primary:disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Error Message Styling */
+.form-error {
+  color: #ef4444;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-error::before {
+  content: '⚠';
+  font-size: 0.75rem;
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+  .futuristic-action-button {
+    padding: 16px 12px;
+    min-height: 70px;
+    border-radius: 18px;
+  }
+
+  .trade-form-section {
+    padding: 20px;
+    border-radius: 20px;
+  }
+
+  .trade-summary-card {
+    padding: 20px;
+    border-radius: 20px;
+  }
+
+  .theme-input {
+    padding: 12px 16px;
+    border-radius: 14px;
+  }
+
+  .theme-input.pl-12 {
+    padding-left: 44px;
+  }
+}
+
+/* Stock Selection Highlight */
+.stock-selected-indicator {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 12px;
+  height: 12px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow:
+    0 0 16px rgba(16, 185, 129, 0.6),
+    0 0 4px rgba(16, 185, 129, 0.8);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
 /* OLED theme adjustments */
 .oled .theme-input {
   background: linear-gradient(135deg,

@@ -8,9 +8,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// User model for authentication
+model User {
+  id          String @id @default(cuid())
+  firebaseUid String @unique // Firebase UID
+  email       String @unique
+  displayName String
+  
+  // Relations
+  trades      Trade[]
+  positions   Position[]
+  settings    UserSettings?
+  alerts      PriceAlert[]
+  performance MonthlyPerformance[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("users")
+}
+
 // User settings for the app
 model UserSettings {
   id              String  @id @default(cuid())
+  userId          String  @unique
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
   defaultCurrency String  @default("USD")
   displayCurrency String  @default("USD")
   taxRate         Float   @default(25.0) // Capital gains tax percentage
@@ -25,11 +48,16 @@ model UserSettings {
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  @@map("user_settings")
 }
 
 // Individual trades (buy/sell transactions)
 model Trade {
   id           String   @id @default(cuid())
+  userId       String   // Foreign key to User
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
   ticker       String   // Stock symbol (AAPL, MSFT)
   company      String   // Company name (Apple Inc.)
   logo         String?  // Company logo URL
@@ -54,15 +82,20 @@ model Trade {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
+  @@index([userId])
   @@index([ticker])
   @@index([date])
   @@index([action])
+  @@map("trades")
 }
 
 // Current stock positions (aggregated from trades)
 model Position {
   id            String   @id @default(cuid())
-  ticker        String   @unique // One position per stock
+  userId        String   // Foreign key to User
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  ticker        String   // Stock symbol
   company       String   // Company name
   logo          String?  // Company logo URL
   currency      String   @default("USD")
@@ -78,55 +111,71 @@ model Position {
   
   // Calculated P&L
   unrealizedPnL       Float?   // Current profit/loss
-  unrealizedPnLPercent Float?  // Percentage gain/loss
+  unrealizedPnLPercent Float?  // P&L percentage
   
   // Metadata
-  lastTradeDate DateTime // Date of most recent trade
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, ticker])
+  @@index([userId])
+  @@map("positions")
 }
 
-// Price alerts (future feature)
+// Price alerts for notifications
 model PriceAlert {
-  id          String   @id @default(cuid())
-  ticker      String   // Stock to watch
-  targetPrice Float    // Alert when price reaches this
-  condition   String   // "above" or "below"
-  isActive    Boolean  @default(true)
+  id            String   @id @default(cuid())
+  userId        String   // Foreign key to User
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  // Notification settings
-  notifyEmail Boolean @default(false)
-  notifyPush  Boolean @default(true)
+  ticker        String   // Stock symbol
+  company       String   // Company name
+  targetPrice   Float    // Price to alert at
+  condition     String   // "ABOVE" or "BELOW"
+  isActive      Boolean  @default(true)
+  
+  // Alert history
+  triggeredAt   DateTime? // When alert was triggered
+  currentPrice  Float?    // Price when triggered
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  @@index([ticker, isActive])
+  @@index([userId])
+  @@index([ticker])
+  @@map("price_alerts")
 }
 
-// Monthly performance summaries (for dashboard)
+// Monthly performance tracking
 model MonthlyPerformance {
-  id          String   @id @default(cuid())
-  year        Int      // 2024
-  month       Int      // 1-12
+  id               String   @id @default(cuid())
+  userId           String   // Foreign key to User
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  // Trading activity
-  totalTrades    Int     @default(0)
-  buyTrades      Int     @default(0)
-  sellTrades     Int     @default(0)
+  year             Int      // 2024
+  month            Int      // 1-12
   
-  // Financial performance
-  grossProfit    Float   @default(0)
-  netProfit      Float   @default(0)
-  totalFees      Float   @default(0)
-  totalTaxes     Float   @default(0)
+  // Performance metrics
+  totalTrades      Int      @default(0)
+  buyTrades        Int      @default(0)
+  sellTrades       Int      @default(0)
   
-  // Portfolio value
-  startingValue  Float?  // Portfolio value at start of month
-  endingValue    Float?  // Portfolio value at end of month
+  totalVolume      Float    @default(0) // Total trade volume
+  totalFees        Float    @default(0) // Total fees paid
+  
+  realizedPnL      Float    @default(0) // Profit/loss from sells
+  unrealizedPnL    Float    @default(0) // Current position values
+  
+  winningTrades    Int      @default(0)
+  losingTrades     Int      @default(0)
+  winRate          Float    @default(0) // Percentage
+  
+  portfolioValue   Float    @default(0) // End of month value
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  @@unique([year, month])
+  @@unique([userId, year, month])
+  @@index([userId])
+  @@map("monthly_performance")
 }

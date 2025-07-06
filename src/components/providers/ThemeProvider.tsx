@@ -1,4 +1,4 @@
-// components/providers/ThemeProvider.tsx - Create this new file
+// components/providers/ThemeProvider.tsx
 'use client'
 
 import { useEffect } from 'react'

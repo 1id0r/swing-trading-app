@@ -1,0 +1,286 @@
+/* styles/dock-menu.css */
+
+.dock-menu {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+
+    /* Liquid transparent background */
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(30px) saturate(150%);
+    -webkit-backdrop-filter: blur(30px) saturate(150%);
+
+    /* Enhanced glassmorphism */
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow:
+        0 25px 45px rgba(0, 0, 0, 0.15),
+        0 10px 25px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+    /* Compact size - smaller height */
+    padding: 8px 16px;
+    margin: 0 12px 20px 12px;
+    border-radius: 24px;
+
+    position: relative;
+    gap: 6px;
+    min-height: 56px;
+    overflow: hidden;
+
+    /* Liquid animation */
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Liquid background effect */
+.dock-menu::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg,
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(255, 255, 255, 0.05) 50%,
+            rgba(255, 255, 255, 0.02) 100%);
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+/* Floating liquid animation */
+.dock-menu::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle,
+            rgba(59, 130, 246, 0.1) 0%,
+            transparent 70%);
+    animation: liquidFloat 8s ease-in-out infinite;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+@keyframes liquidFloat {
+
+    0%,
+    100% {
+        transform: rotate(0deg) scale(1);
+        opacity: 0.3;
+    }
+
+    33% {
+        transform: rotate(120deg) scale(1.1);
+        opacity: 0.6;
+    }
+
+    66% {
+        transform: rotate(240deg) scale(0.9);
+        opacity: 0.4;
+    }
+}
+
+.dock-menu__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 16px;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    position: relative;
+    flex: 1;
+    max-width: 60px;
+    min-width: 48px;
+    z-index: 2;
+    overflow: hidden;
+    height: 40px;
+}
+
+/* Liquid hover effect */
+.dock-menu__item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at center,
+            rgba(255, 255, 255, 0.15) 0%,
+            rgba(255, 255, 255, 0.05) 50%,
+            transparent 100%);
+    border-radius: inherit;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    pointer-events: none;
+}
+
+.dock-menu__item:hover::before {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.dock-menu__item:hover {
+    transform: translateY(-3px) scale(1.08);
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(20px);
+    box-shadow:
+        0 12px 30px rgba(0, 0, 0, 0.15),
+        0 4px 12px rgba(59, 130, 246, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.dock-menu__item.active {
+    transform: translateY(-4px) scale(1.12);
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(25px);
+    box-shadow:
+        0 15px 35px rgba(0, 0, 0, 0.2),
+        0 6px 16px rgba(59, 130, 246, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Active indicator - now a dot instead of line */
+.dock-menu__item.active::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: var(--component-active-color, #3b82f6);
+    border-radius: 50%;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+.dock-menu__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.dock-menu__icon .icon {
+    width: 20px;
+    height: 20px;
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.dock-menu__item:hover .dock-menu__icon .icon {
+    color: var(--component-active-color, #3b82f6);
+    transform: scale(1.2) rotate(5deg);
+    filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.3));
+}
+
+.dock-menu__item.active .dock-menu__icon .icon {
+    color: var(--component-active-color, #3b82f6);
+    transform: scale(1.25) rotate(-2deg);
+    filter: drop-shadow(0 6px 12px rgba(59, 130, 246, 0.4));
+}
+
+/* Hide text labels completely */
+.dock-menu__text {
+    display: none;
+}
+
+/* Special liquid Add Trade button - now more compact */
+.dock-menu__item[data-add-trade="true"] {
+    background: linear-gradient(135deg,
+            rgba(59, 130, 246, 0.8) 0%,
+            rgba(29, 78, 216, 0.9) 100%);
+    backdrop-filter: blur(20px);
+    border-radius: 18px;
+    margin: 0 4px;
+    box-shadow:
+        0 6px 20px rgba(59, 130, 246, 0.4),
+        0 3px 10px rgba(59, 130, 246, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    overflow: hidden;
+}
+
+.dock-menu__item[data-add-trade="true"]::before {
+    background: linear-gradient(135deg,
+            rgba(255, 255, 255, 0.2) 0%,
+            rgba(255, 255, 255, 0.1) 100%);
+}
+
+.dock-menu__item[data-add-trade="true"]:hover {
+    transform: translateY(-4px) scale(1.15);
+    box-shadow:
+        0 12px 30px rgba(59, 130, 246, 0.5),
+        0 6px 16px rgba(59, 130, 246, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.dock-menu__item[data-add-trade="true"] .dock-menu__icon .icon {
+    color: rgba(255, 255, 255, 0.95);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* No active dot for Add Trade button since it's already highlighted */
+.dock-menu__item[data-add-trade="true"]::after {
+    display: none;
+}
+
+/* Theme adaptations */
+.light .dock-menu {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow:
+        0 25px 45px rgba(0, 0, 0, 0.08),
+        0 10px 25px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.light .dock-menu__icon .icon {
+    color: rgba(0, 0, 0, 0.7);
+}
+
+.oled .dock-menu {
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 25px 45px rgba(0, 0, 0, 0.9),
+        0 10px 25px rgba(0, 0, 0, 0.7),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.oled .dock-menu__icon .icon {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Responsive compact adjustments */
+@media (max-width: 320px) {
+    .dock-menu {
+        padding: 6px 12px;
+        margin: 0 8px 16px 8px;
+        gap: 4px;
+        border-radius: 20px;
+        min-height: 48px;
+    }
+
+    .dock-menu__item {
+        padding: 8px 6px;
+        min-width: 40px;
+        border-radius: 14px;
+        height: 32px;
+    }
+
+    .dock-menu__icon .icon {
+        width: 18px;
+        height: 18px;
+    }
+}

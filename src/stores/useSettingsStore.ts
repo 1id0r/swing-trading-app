@@ -1,5 +1,4 @@
-
-// stores/useSettingsStore.ts
+// stores/useSettingsStore.ts (Fixed - no auth headers required)
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 
@@ -58,17 +57,27 @@ export const useSettingsStore = create<SettingsStore>()(
       (set, get) => ({
         ...initialState,
 
+        // Fetch settings from API (simplified - no auth headers)
         fetchSettings: async () => {
           set({ isLoading: true, error: null });
           
           try {
-            const response = await fetch('/api/settings');
+            console.log('🚀 Fetching settings...');
+            
+            const response = await fetch('/api/settings', {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
             
             if (!response.ok) {
-              throw new Error(`Failed to fetch settings: ${response.status}`);
+              const errorData = await response.json().catch(() => ({}));
+              throw new Error(errorData.error || `Failed to fetch settings: ${response.status}`);
             }
 
             const data = await response.json();
+            console.log('✅ Settings fetched successfully:', data);
             
             set({ 
               settings: data.settings, 
@@ -76,11 +85,11 @@ export const useSettingsStore = create<SettingsStore>()(
             });
 
             // Apply theme immediately
-            if (data.settings.theme) {
+            if (data.settings?.theme) {
               get().setTheme(data.settings.theme);
             }
           } catch (error) {
-            console.error('Error fetching settings:', error);
+            console.error('❌ Error fetching settings:', error);
             set({
               error: error instanceof Error ? error.message : 'Failed to fetch settings',
               isLoading: false,
@@ -88,22 +97,28 @@ export const useSettingsStore = create<SettingsStore>()(
           }
         },
 
+        // Update settings (simplified - no auth headers)
         updateSettings: async (updates) => {
           set({ isLoading: true, error: null });
           
           try {
+            console.log('🚀 Updating settings:', updates);
+            
             const response = await fetch('/api/settings', {
               method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                'Content-Type': 'application/json' 
+              },
               body: JSON.stringify(updates),
             });
 
             if (!response.ok) {
-              const errorData = await response.json();
+              const errorData = await response.json().catch(() => ({}));
               throw new Error(errorData.error || `Failed to update settings: ${response.status}`);
             }
 
             const data = await response.json();
+            console.log('✅ Settings updated successfully:', data);
             
             set({ 
               settings: data.settings, 
@@ -115,7 +130,7 @@ export const useSettingsStore = create<SettingsStore>()(
               get().setTheme(updates.theme);
             }
           } catch (error) {
-            console.error('Error updating settings:', error);
+            console.error('❌ Error updating settings:', error);
             set({
               error: error instanceof Error ? error.message : 'Failed to update settings',
               isLoading: false,
@@ -124,57 +139,78 @@ export const useSettingsStore = create<SettingsStore>()(
           }
         },
 
+        // Fetch currencies (simplified - no auth headers)
         fetchCurrencies: async () => {
           try {
-            const response = await fetch('/api/currencies');
+            console.log('🚀 Fetching currencies...');
+            
+            const response = await fetch('/api/currencies', {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
             
             if (!response.ok) {
-              throw new Error(`Failed to fetch currencies: ${response.status}`);
+              const errorData = await response.json().catch(() => ({}));
+              throw new Error(errorData.error || `Failed to fetch currencies: ${response.status}`);
             }
 
             const data = await response.json();
-            set({ currencies: data.currencies });
+            console.log('✅ Currencies fetched successfully:', data);
+            
+            set({ currencies: data.currencies || [] });
           } catch (error) {
-            console.error('Error fetching currencies:', error);
+            console.error('❌ Error fetching currencies:', error);
             set({
               error: error instanceof Error ? error.message : 'Failed to fetch currencies',
             });
           }
         },
 
+        // Set theme (client-side theme application)
         setTheme: (theme: Theme) => {
-          // Apply theme to document
-          const root = document.documentElement;
-          
-          // Remove existing theme classes
-          root.classList.remove('light', 'dark', 'oled');
-          
-          // Add new theme class
-          root.classList.add(theme);
-          
-          // Update CSS variables based on theme
-          switch (theme) {
-            case 'light':
-              root.style.setProperty('--bg-primary', '#ffffff');
-              root.style.setProperty('--bg-secondary', '#f8fafc');
-              root.style.setProperty('--text-primary', '#1e293b');
-              root.style.setProperty('--text-secondary', '#64748b');
-              break;
-            case 'dark':
-              root.style.setProperty('--bg-primary', '#0f172a');
-              root.style.setProperty('--bg-secondary', '#1e293b');
-              root.style.setProperty('--text-primary', '#f1f5f9');
-              root.style.setProperty('--text-secondary', '#94a3b8');
-              break;
-            case 'oled':
-              root.style.setProperty('--bg-primary', '#000000');
-              root.style.setProperty('--bg-secondary', '#111111');
-              root.style.setProperty('--text-primary', '#ffffff');
-              root.style.setProperty('--text-secondary', '#888888');
-              break;
+          try {
+            console.log('🎨 Applying theme:', theme);
+            
+            // Apply theme to document
+            const root = document.documentElement;
+            
+            // Remove existing theme classes
+            root.classList.remove('light', 'dark', 'oled');
+            
+            // Add new theme class
+            root.classList.add(theme);
+            
+            // Update CSS variables based on theme
+            switch (theme) {
+              case 'light':
+                root.style.setProperty('--bg-primary', '#ffffff');
+                root.style.setProperty('--bg-secondary', '#f8fafc');
+                root.style.setProperty('--text-primary', '#1e293b');
+                root.style.setProperty('--text-secondary', '#64748b');
+                break;
+              case 'dark':
+                root.style.setProperty('--bg-primary', '#0f172a');
+                root.style.setProperty('--bg-secondary', '#1e293b');
+                root.style.setProperty('--text-primary', '#f1f5f9');
+                root.style.setProperty('--text-secondary', '#94a3b8');
+                break;
+              case 'oled':
+                root.style.setProperty('--bg-primary', '#000000');
+                root.style.setProperty('--bg-secondary', '#111111');
+                root.style.setProperty('--text-primary', '#ffffff');
+                root.style.setProperty('--text-secondary', '#888888');
+                break;
+            }
+            
+            console.log('✅ Theme applied successfully:', theme);
+          } catch (error) {
+            console.error('❌ Error applying theme:', error);
           }
         },
 
+        // Utility functions
         setError: (error) => set({ error }),
         clearError: () => set({ error: null }),
       }),
@@ -226,32 +262,15 @@ export const settingsUtils = {
     return profit > 0 ? (profit * taxRate) / 100 : 0;
   },
 
-  getThemeColors: (theme: Theme) => {
-    switch (theme) {
-      case 'light':
-        return {
-          primary: '#ffffff',
-          secondary: '#f8fafc',
-          accent: '#3b82f6',
-          text: '#1e293b',
-          textSecondary: '#64748b',
-        };
-      case 'dark':
-        return {
-          primary: '#0f172a',
-          secondary: '#1e293b',
-          accent: '#3b82f6',
-          text: '#f1f5f9',
-          textSecondary: '#94a3b8',
-        };
-      case 'oled':
-        return {
-          primary: '#000000',
-          secondary: '#111111',
-          accent: '#3b82f6',
-          text: '#ffffff',
-          textSecondary: '#888888',
-        };
-    }
-  },
+  getDefaultSettings: (): Partial<UserSettings> => ({
+    defaultCurrency: 'USD',
+    displayCurrency: 'USD',
+    taxRate: 25.0,
+    defaultFee: 9.99,
+    dateFormat: 'MM/dd/yyyy',
+    theme: 'dark',
+    notifyTrades: true,
+    notifyPriceAlerts: false,
+    notifyMonthly: true,
+  }),
 };

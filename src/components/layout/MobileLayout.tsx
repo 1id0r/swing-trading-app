@@ -1,8 +1,9 @@
-// components/layout/MobileLayout.tsx (Theme-Aware)
+// components/layout/MobileLayout.tsx (Updated with UserMenu)
 'use client'
 
 import { ReactNode } from 'react'
 import { InteractiveDock } from '@/components/ui/InteractiveDock'
+import { UserMenu } from '@/components/ui/UserMenu'
 
 interface MobileLayoutProps {
   children: ReactNode
@@ -14,7 +15,7 @@ interface MobileLayoutProps {
 
 export function MobileLayout({ children, title, subtitle, showBackButton = false, onBackClick }: MobileLayoutProps) {
   return (
-    <div className=' min-h-screen theme-bg-gradient theme-text-primary transition-all duration-300'>
+    <div className='min-h-screen theme-bg-gradient theme-text-primary transition-all duration-300'>
       <div className='max-w-md mx-auto'>
         {/* Header */}
         <header className='p-4 pt-8 pb-6'>
@@ -23,7 +24,7 @@ export function MobileLayout({ children, title, subtitle, showBackButton = false
               {showBackButton && (
                 <button
                   onClick={onBackClick}
-                  className=' .theme-button-primary theme-text-secondary hover:theme-text-primary p-2 -ml-2 rounded-lg transition-colors duration-200'
+                  className='theme-text-secondary hover:theme-text-primary p-2 -ml-2 rounded-lg transition-colors duration-200'
                 >
                   <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                     <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 19l-7-7 7-7' />
@@ -36,10 +37,8 @@ export function MobileLayout({ children, title, subtitle, showBackButton = false
               </div>
             </div>
 
-            {/* User Avatar */}
-            <div className=' .futuristic-avatar w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center theme-text-primary   font-bold'>
-              ST
-            </div>
+            {/* User Menu */}
+            <UserMenu />
           </div>
         </header>
 

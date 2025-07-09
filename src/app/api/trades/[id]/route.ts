@@ -1,14 +1,41 @@
-
-// app/api/trades/[id]/route.ts
+// src/app/api/trades/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { db, dbHelpers } from '@/lib/db';
+
+// Helper function to get userId from request
+// For now, we'll use a simple approach since this is a single-user app
+async function getUserId(request: NextRequest): Promise<string> {
+  // TODO: Implement proper Firebase auth token verification
+  // For now, return a default user ID or the first user
+  try {
+    const firstUser = await db.user.findFirst();
+    if (firstUser) {
+      return firstUser.id;
+    }
+    
+    // If no users exist, create a default one
+    const defaultUser = await db.user.create({
+      data: {
+        firebaseUid: 'default-user',
+        email: 'user@example.com',
+        displayName: 'Default User',
+      },
+    });
+    
+    return defaultUser.id;
+  } catch (error) {
+    console.error('Error getting user ID:', error);
+    throw new Error('Unable to determine user ID');
+  }
+}
 
 // GET /api/trades/[id] - Get single trade
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const trade = await db.trade.findUnique({
       where: { id: params.id },
     });
@@ -33,9 +60,10 @@ export async function GET(
 // PUT /api/trades/[id] - Update trade
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const body = await request.json();
     const { shares, pricePerShare, fee, date } = body;
 
@@ -50,6 +78,9 @@ export async function PUT(
         { status: 404 }
       );
     }
+
+    // Get userId from the existing trade
+    const userId = existingTrade.userId;
 
     // Calculate new totals
     const newShares = shares ?? existingTrade.shares;
@@ -70,14 +101,17 @@ export async function PUT(
 
     if (existingTrade.action === 'SELL') {
       try {
+        // Pass all 4 required parameters including userId
         costBasis = await dbHelpers.calculateFIFOCostBasis(
           existingTrade.ticker,
           newShares,
-          newDate
+          newDate,
+          userId
         );
         
         grossProfit = totalValue - costBasis;
-        const settings = await dbHelpers.getUserSettings();
+        // Pass userId to getUserSettings
+        const settings = await dbHelpers.getUserSettings(userId);
         taxAmount = grossProfit > 0 ? (grossProfit * settings.taxRate) / 100 : 0;
         netProfit = grossProfit - newFee - taxAmount;
       } catch (error) {
@@ -105,8 +139,8 @@ export async function PUT(
       },
     });
 
-    // Update the position
-    await dbHelpers.updatePosition(existingTrade.ticker);
+    // Update the position with userId
+    await dbHelpers.updatePosition(existingTrade.ticker, userId);
 
     return NextResponse.json({ trade: updatedTrade });
   } catch (error) {
@@ -121,9 +155,10 @@ export async function PUT(
 // DELETE /api/trades/[id] - Delete trade
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const trade = await db.trade.findUnique({
       where: { id: params.id },
     });
@@ -135,13 +170,16 @@ export async function DELETE(
       );
     }
 
+    // Get userId from the trade
+    const userId = trade.userId;
+
     // Delete the trade
     await db.trade.delete({
       where: { id: params.id },
     });
 
-    // Update the position
-    await dbHelpers.updatePosition(trade.ticker);
+    // Update the position with userId
+    await dbHelpers.updatePosition(trade.ticker, userId);
 
     return NextResponse.json({ message: 'Trade deleted successfully' });
   } catch (error) {

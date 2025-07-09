@@ -1,8 +1,7 @@
-// components/trade/StockAutocomplete.tsx (Fixed TypeScript Issues)
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Search, TrendingUp, TrendingDown, Loader2 } from 'lucide-react'
+import { Search, TrendingUp, TrendingDown, Loader2, Sparkles } from 'lucide-react'
 import { stockApi } from '@/lib/stockApi'
 
 interface StockOption {
@@ -112,13 +111,13 @@ export function StockAutocomplete({
 
   const handleBlur = () => {
     // Delay to allow clicking on options
-    setTimeout(() => setIsOpen(false), 150)
+    setTimeout(() => setIsOpen(false), 200)
   }
 
   return (
-    <div className='relative'>
+    <div className='relative w-full'>
       <div className='relative'>
-        <Search className='absolute left-3 top-3 w-4 h-4 theme-text-secondary  ' />
+        <Search className='absolute left-4 top-4 w-4 h-4 theme-text-secondary' />
         <input
           ref={inputRef}
           type='text'
@@ -128,78 +127,103 @@ export function StockAutocomplete({
           onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder={placeholder}
-          className={`w-full theme-card border rounded-lg p-3 pl-10 pr-10 theme-text-primary   placeholder-gray-400 focus:border-blue-500 focus:outline-none uppercase ${
-            error ? 'border-red-500' : 'border-gray-700'
-          }`}
+          className={`theme-input w-full pl-12 pr-12 uppercase text-lg font-medium ${error ? 'border-red-500' : ''}`}
           autoComplete='off'
         />
-        {isLoading && <Loader2 className='absolute right-3 top-3 w-4 h-4 theme-text-secondary   animate-spin' />}
+        {isLoading && <Loader2 className='absolute right-4 top-4 w-4 h-4 theme-text-secondary animate-spin' />}
       </div>
 
       {error && <p className='text-sm text-red-400 mt-1'>{error}</p>}
 
-      {/* Dropdown Options */}
+      {/* Enhanced Dropdown Options */}
       {isOpen && (
         <div
           ref={optionsRef}
-          className='absolute top-full left-0 right-0 mt-1 bg-gray-800    rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto'
+          className='absolute top-full left-0 right-0 mt-2 theme-card border-2 border-blue-500/20 backdrop-blur-xl max-h-80 overflow-y-auto z-[9999]'
+          style={{
+            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(59, 130, 246, 0.1)',
+          }}
         >
+          {/* Header with glow effect */}
+          <div className='p-3 border-b border-gray-700/50 bg-gradient-to-r from-blue-500/10 to-purple-500/10'>
+            <div className='flex items-center gap-2 text-sm font-medium theme-text-primary'>
+              <Sparkles className='w-4 h-4 text-blue-400' />
+              Search Results
+            </div>
+          </div>
+
           {options.length === 0 && !isLoading && (
-            <div className='p-4 text-center theme-text-secondary  '>No stocks found for "{query}"</div>
+            <div className='p-6 text-center'>
+              <div className='theme-text-secondary text-sm'>No stocks found for "{query}"</div>
+              <div className='text-xs theme-text-secondary opacity-60 mt-1'>Try searching with a ticker symbol</div>
+            </div>
           )}
 
           {options.map((stock, index) => (
             <button
               key={stock.symbol}
               onClick={() => handleSelect(stock)}
-              className={`w-full p-3 text-left hover:bg-gray-700/50 transition-colors border-b border-gray-700 last:border-b-0 ${
-                index === selectedIndex ? 'bg-gray-700/50' : ''
+              onMouseDown={(e) => e.preventDefault()}
+              className={`w-full p-3 text-left transition-all duration-200 border-b border-gray-700/30 last:border-b-0 group ${
+                index === selectedIndex
+                  ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-500/30'
+                  : 'hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-purple-500/10'
               }`}
             >
               <div className='flex items-center gap-3'>
-                {/* Company Logo */}
-                <div className='w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0'>
-                  {stock.logo ? (
-                    <img
-                      src={stock.logo}
-                      alt={stock.symbol}
-                      className='w-8 h-8 rounded-full object-cover'
-                      onError={(e) => {
-                        // Fixed: Properly typed event target
-                        const target = e.currentTarget as HTMLImageElement
-                        target.style.display = 'none'
-                        const sibling = target.nextElementSibling as HTMLElement
-                        if (sibling) {
-                          sibling.style.display = 'flex'
-                        }
-                      }}
-                    />
-                  ) : null}
-                  <span
-                    className={`theme-text-primary   font-bold text-sm ${stock.logo ? 'hidden' : 'flex'}`}
-                    style={{ display: stock.logo ? 'none' : 'flex' }}
-                  >
-                    {stock.symbol.charAt(0)}
-                  </span>
+                {/* Company Logo/Avatar */}
+                <div className='relative'>
+                  <div className='w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-md'>
+                    {stock.logo ? (
+                      <img
+                        src={stock.logo}
+                        alt={stock.symbol}
+                        className='w-7 h-7 rounded-md object-cover'
+                        onError={(e) => {
+                          const target = e.currentTarget as HTMLImageElement
+                          target.style.display = 'none'
+                          const sibling = target.nextElementSibling as HTMLElement
+                          if (sibling) {
+                            sibling.style.display = 'flex'
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <span
+                      className={`theme-text-primary font-bold text-xs ${stock.logo ? 'hidden' : 'flex'}`}
+                      style={{ display: stock.logo ? 'none' : 'flex' }}
+                    >
+                      {stock.symbol.charAt(0)}
+                    </span>
+                  </div>
+                  {/* Glow effect on hover */}
+                  <div className='absolute inset-0 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200'></div>
                 </div>
 
                 {/* Stock Info */}
                 <div className='flex-1 min-w-0'>
-                  <div className='flex items-center gap-2'>
-                    <span className='theme-text-primary   font-medium'>{stock.symbol}</span>
-                    <span className='theme-text-secondary   truncate text-sm'>{stock.name}</span>
+                  <div className='flex items-center gap-2 mb-1'>
+                    <span className='theme-text-primary font-bold text-base'>{stock.symbol}</span>
+                    <span className='theme-text-secondary truncate text-xs font-medium'>{stock.name}</span>
                   </div>
 
-                  <div className='flex items-center gap-2 mt-1'>
-                    <span className='theme-text-primary   font-medium'>${stock.currentPrice.toFixed(2)}</span>
+                  <div className='flex items-center gap-2'>
+                    <span className='theme-text-primary font-semibold text-sm'>${stock.currentPrice.toFixed(2)}</span>
                     {stock.change !== 0 && (
                       <div
-                        className={`flex items-center gap-1 text-xs ${
-                          stock.change > 0 ? 'text-green-400' : 'text-red-400'
+                        className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                          stock.change > 0
+                            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                            : 'bg-red-500/20 text-red-400 border border-red-500/30'
                         }`}
                       >
-                        {stock.change > 0 ? <TrendingUp className='w-3 h-3' /> : <TrendingDown className='w-3 h-3' />}
-                        <span>
+                        {stock.change > 0 ? (
+                          <TrendingUp className='w-2.5 h-2.5' />
+                        ) : (
+                          <TrendingDown className='w-2.5 h-2.5' />
+                        )}
+                        <span className='text-xs'>
                           {stock.change > 0 ? '+' : ''}
                           {stock.change.toFixed(2)} ({stock.changePercent.toFixed(2)}%)
                         </span>
@@ -207,6 +231,11 @@ export function StockAutocomplete({
                     )}
                   </div>
                 </div>
+
+                {/* Selection indicator */}
+                {index === selectedIndex && (
+                  <div className='w-2 h-8 bg-gradient-to-b from-blue-400 to-purple-400 rounded-full shadow-lg'></div>
+                )}
               </div>
             </button>
           ))}

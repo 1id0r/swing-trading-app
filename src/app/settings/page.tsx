@@ -4,20 +4,7 @@
 import { useEffect, useState } from 'react'
 import { MobileLayout } from '@/components/layout/MobileLayout'
 import { useSettingsStore, Theme } from '@/stores/useSettingsStore'
-import {
-  Palette,
-  DollarSign,
-  Globe,
-  Percent,
-  Bell,
-  Calendar,
-  Smartphone,
-  Monitor,
-  Moon,
-  Sun,
-  Save,
-  RefreshCw,
-} from 'lucide-react'
+import { Palette, DollarSign, Globe, Percent, Bell, Smartphone, Moon, Sun, Save, RefreshCw } from 'lucide-react'
 
 // Default settings to prevent undefined values
 const DEFAULT_SETTINGS = {

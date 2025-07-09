@@ -1,6 +1,7 @@
-// lib/db.ts
+// lib/db.ts (Complete fixed version)
 import { PrismaClient } from '@prisma/client';
 
+// Only create Prisma client on server side
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
@@ -9,19 +10,23 @@ export const db = globalForPrisma.prisma ?? new PrismaClient();
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db;
 
-// Helper functions for common operations
+// Server-only helper functions
 export const dbHelpers = {
-  // Get or create user settings (since it's a single-user app)
-  async getUserSettings() {
-    let settings = await db.userSettings.findFirst();
+  // Get or create user settings for a specific user
+  async getUserSettings(userId: string) {
+    let settings = await db.userSettings.findUnique({
+      where: { userId },
+    });
     
     if (!settings) {
       settings = await db.userSettings.create({
         data: {
+          userId,
           defaultCurrency: 'USD',
           displayCurrency: 'USD',
           taxRate: 25.0,
           defaultFee: 9.99,
+          theme: 'dark',
         },
       });
     }
@@ -29,21 +34,46 @@ export const dbHelpers = {
     return settings;
   },
 
-  // Calculate FIFO cost basis for a sell trade
-  async calculateFIFOCostBasis(ticker: string, sharesToSell: number, sellDate: Date) {
-    // Get all buy trades for this ticker before the sell date
+  // Create user in database from Firebase user
+  async createOrUpdateUser(firebaseUid: string, email: string, displayName: string) {
+    return await db.user.upsert({
+      where: { firebaseUid },
+      update: {
+        email,
+        displayName,
+      },
+      create: {
+        firebaseUid,
+        email,
+        displayName,
+      },
+    });
+  },
+
+  // Get user by Firebase UID
+  async getUserByFirebaseUid(firebaseUid: string) {
+    return await db.user.findUnique({
+      where: { firebaseUid },
+    });
+  },
+
+  // Calculate FIFO cost basis for a specific user's sell trade
+  async calculateFIFOCostBasis(ticker: string, sharesToSell: number, sellDate: Date, userId: string) {
+    // Get all buy trades for this user and ticker before the sell date
     const buyTrades = await db.trade.findMany({
       where: {
+        userId,
         ticker,
         action: 'BUY',
         date: { lte: sellDate },
       },
-      orderBy: { date: 'asc' }, // FIFO order
+      orderBy: { date: 'asc' },
     });
 
-    // Get all previous sell trades
+    // Get all previous sell trades for this user
     const previousSells = await db.trade.findMany({
       where: {
+        userId,
         ticker,
         action: 'SELL',
         date: { lt: sellDate },
@@ -51,13 +81,11 @@ export const dbHelpers = {
       orderBy: { date: 'asc' },
     });
 
-    // Calculate how many shares were already sold
     const sharesSoldPreviously = previousSells.reduce(
       (total, sell) => total + sell.shares,
       0
     );
 
-    // Apply FIFO to determine cost basis
     let remainingSharesToSell = sharesToSell;
     let totalCostBasis = 0;
     let sharesProcessed = 0;
@@ -78,22 +106,30 @@ export const dbHelpers = {
     }
 
     if (remainingSharesToSell > 0) {
-      throw new Error(`Insufficient shares to sell. Missing ${remainingSharesToSell} shares.`);
+      throw new Error(`Insufficient shares to sell. User ${userId} only has ${sharesToSell - remainingSharesToSell} shares available.`);
     }
 
     return totalCostBasis;
   },
 
-  // Update or create a position based on current trades
-  async updatePosition(ticker: string) {
+  // Update or create a position based on current trades for a user
+  async updatePosition(ticker: string, userId: string) {
     const trades = await db.trade.findMany({
-      where: { ticker },
+      where: { 
+        userId,
+        ticker 
+      },
       orderBy: { date: 'asc' },
     });
 
     if (trades.length === 0) {
       // No trades, delete position if it exists
-      await db.position.deleteMany({ where: { ticker } });
+      await db.position.deleteMany({ 
+        where: { 
+          userId, 
+          ticker 
+        } 
+      });
       return null;
     }
 
@@ -108,62 +144,134 @@ export const dbHelpers = {
       } else if (trade.action === 'SELL') {
         totalShares -= trade.shares;
         // For sells, reduce cost proportionally
-        const costToRemove = (trade.shares / (totalShares + trade.shares)) * totalCost;
-        totalCost -= costToRemove;
+        if (totalShares + trade.shares > 0) {
+          const costToRemove = (trade.shares / (totalShares + trade.shares)) * totalCost;
+          totalCost -= costToRemove;
+        }
       }
     }
 
     if (totalShares <= 0) {
       // Position is closed, delete it
-      await db.position.deleteMany({ where: { ticker } });
+      await db.position.deleteMany({ 
+        where: { 
+          userId, 
+          ticker 
+        } 
+      });
       return null;
     }
 
     const averagePrice = totalCost / totalShares;
     const latestTrade = trades[trades.length - 1];
 
-    // Upsert position
-    const position = await db.position.upsert({
-      where: { ticker },
-      update: {
-        totalShares,
-        averagePrice,
-        totalCost,
-        lastTradeDate: latestTrade.date,
-        company: latestTrade.company,
-        logo: latestTrade.logo,
-        currency: latestTrade.currency,
-      },
-      create: {
+    // First, try to find existing position
+    const existingPosition = await db.position.findFirst({
+      where: {
+        userId,
         ticker,
-        company: latestTrade.company,
-        logo: latestTrade.logo,
-        currency: latestTrade.currency,
-        totalShares,
-        averagePrice,
-        totalCost,
-        lastTradeDate: latestTrade.date,
       },
     });
 
-    return position;
+    if (existingPosition) {
+      // Update existing position
+      const position = await db.position.update({
+        where: { id: existingPosition.id },
+        data: {
+          totalShares,
+          averagePrice,
+          totalCost,
+          company: latestTrade.company,
+          logo: latestTrade.logo,
+          currency: latestTrade.currency,
+        },
+      });
+      return position;
+    } else {
+      // Create new position
+      const position = await db.position.create({
+        data: {
+          userId,
+          ticker,
+          company: latestTrade.company,
+          logo: latestTrade.logo,
+          currency: latestTrade.currency,
+          totalShares,
+          averagePrice,
+          totalCost,
+        },
+      });
+      return position;
+    }
   },
 
-  // Update current prices for all positions
-  async updateCurrentPrices(priceUpdates: Record<string, number>) {
-    const updatePromises = Object.entries(priceUpdates).map(([ticker, price]) =>
-      db.position.updateMany({
-        where: { ticker },
-        data: {
-          currentPrice: price,
-          lastPriceUpdate: new Date(),
-          unrealizedPnL: {
-            // This will be calculated in the API route
-          },
-        },
-      })
+  // Get user's portfolio statistics
+  async getUserPortfolioStats(userId: string) {
+    const positions = await db.position.findMany({
+      where: { userId },
+    });
+
+    const totalPositions = positions.length;
+    const totalValue = positions.reduce((sum, pos) => 
+      sum + (pos.currentPrice ? pos.currentPrice * pos.totalShares : pos.totalCost), 0
+    );
+    const totalCost = positions.reduce((sum, pos) => sum + pos.totalCost, 0);
+    const totalUnrealizedPnL = totalValue - totalCost;
+
+    return {
+      totalPositions,
+      totalValue,
+      totalCost,
+      totalUnrealizedPnL,
+      lastUpdated: Date.now(),
+    };
+  },
+
+  // Get user's dashboard statistics
+  async getUserDashboardStats(userId: string) {
+    const trades = await db.trade.findMany({
+      where: { userId },
+    });
+
+    const positions = await db.position.findMany({
+      where: { userId },
+    });
+
+    // Calculate total P&L from all sell trades
+    const totalPnL = trades
+      .filter(trade => trade.action === 'SELL' && trade.netProfit !== null)
+      .reduce((sum, trade) => sum + (trade.netProfit || 0), 0);
+
+    const activePositions = positions.filter(pos => pos.totalShares > 0).length;
+    
+    const totalValue = positions.reduce((sum, pos) => 
+      sum + (pos.currentPrice ? pos.currentPrice * pos.totalShares : pos.totalCost), 0
     );
 
-    await Promise.all(updatePromises);
+    // Calculate win rate
+    const sellTrades = trades.filter(trade => trade.action === 'SELL' && trade.netProfit !== null);
+    const winningTrades = sellTrades.filter(trade => (trade.netProfit || 0) > 0).length;
+    const winRate = sellTrades.length > 0 ? (winningTrades / sellTrades.length) * 100 : 0;
+
+    // Calculate this month's P&L
+    const thisMonth = new Date();
+    thisMonth.setDate(1);
+    thisMonth.setHours(0, 0, 0, 0);
+    
+    const thisMonthTrades = trades.filter(trade => 
+      trade.action === 'SELL' && 
+      trade.date >= thisMonth && 
+      trade.netProfit !== null
+    );
+    
+    const thisMonthPnL = thisMonthTrades.reduce((sum, trade) => sum + (trade.netProfit || 0), 0);
+
+    return {
+      totalPnL,
+      activePositions,
+      totalValue,
+      winRate,
+      thisMonthPnL,
+    };
   },
 };

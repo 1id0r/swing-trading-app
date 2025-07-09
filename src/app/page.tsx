@@ -1,41 +1,61 @@
-// app/page.tsx
+// app/page.tsx (With relative import - immediate fix)
 'use client'
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useAuth } from '@/app/contexts/AuthContext'
-import { TrendingUp, BarChart3, PieChart, ArrowRight, Shield, Smartphone } from 'lucide-react'
+import { useAuth } from './contexts/AuthContext' // ← Relative import
+import { TrendingUp, BarChart3, ArrowRight, Shield, Smartphone } from 'lucide-react'
 
 export default function HomePage() {
   const { user, loading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    // If user is logged in, redirect to dashboard
+    console.log('🏠 HomePage - Auth state:', {
+      user: user ? `${user.email} (${user.uid})` : null,
+      loading,
+    })
+
+    // Only redirect if we're sure the user is authenticated AND not loading
     if (!loading && user) {
+      console.log('🔄 Redirecting authenticated user to dashboard')
       router.push('/dashboard')
     }
   }, [user, loading, router])
 
   // Show loading while checking auth
   if (loading) {
+    console.log('⏳ HomePage - Still loading auth state')
     return (
       <div className='min-h-screen theme-bg-gradient flex items-center justify-center'>
         <div className='theme-card p-8 text-center'>
           <div className='futuristic-avatar mx-auto mb-4 !w-16 !h-16'>
             <div className='w-8 h-8 border-3 border-blue-400/30 border-t-blue-400 rounded-full animate-spin'></div>
           </div>
-          <p className='theme-text-primary font-medium'>Loading...</p>
+          <p className='theme-text-primary font-medium'>Checking authentication...</p>
         </div>
       </div>
     )
   }
 
-  // Don't show landing page if user is authenticated
+  // If user is authenticated, don't show landing page (they'll be redirected)
   if (user) {
-    return null
+    console.log('👤 HomePage - User is authenticated, should redirect soon')
+    return (
+      <div className='min-h-screen theme-bg-gradient flex items-center justify-center'>
+        <div className='theme-card p-8 text-center'>
+          <div className='futuristic-avatar mx-auto mb-4 !w-16 !h-16'>
+            <div className='w-8 h-8 border-3 border-blue-400/30 border-t-blue-400 rounded-full animate-spin'></div>
+          </div>
+          <p className='theme-text-primary font-medium'>Redirecting to dashboard...</p>
+        </div>
+      </div>
+    )
   }
+
+  // User is not authenticated - show landing page
+  console.log('🏠 HomePage - Showing landing page (user not authenticated)')
 
   return (
     <div className='min-h-screen theme-bg-gradient'>

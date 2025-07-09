@@ -1,4 +1,4 @@
-// Update your /src/app/contexts/AuthContext.tsx to handle profile photos
+// Update your /src/app/contexts/AuthContext.tsx to share auth state with store
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
@@ -41,13 +41,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Get or create user in database
           const dbUser = await getOrCreateDatabaseUser(firebaseUser)
           setDbUserId(dbUser.id)
+
+          // Share auth state with store (for API calls)
+          ;(window as any).__AUTH_CONTEXT__ = {
+            user: firebaseUser,
+            dbUserId: dbUser.id,
+          }
+
           console.log('✅ Database user set:', dbUser.id)
         } catch (error) {
           console.error('❌ Failed to get/create database user:', error)
           setDbUserId(null)
+          ;(window as any).__AUTH_CONTEXT__ = null
         }
       } else {
         setDbUserId(null)
+        ;(window as any).__AUTH_CONTEXT__ = null
       }
 
       setLoading(false)
@@ -107,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await signOut(auth)
       setDbUserId(null)
+      ;(window as any).__AUTH_CONTEXT__ = null
       console.log('✅ User signed out')
     } catch (error) {
       console.error('❌ Logout failed:', error)

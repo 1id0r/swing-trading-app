@@ -1,4 +1,4 @@
-// Update your /src/components/ui/UserMenu.tsx with this debug version
+// Replace your /src/components/ui/UserMenu.tsx with this fixed version
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -10,20 +10,8 @@ export function UserMenu() {
   const { user, logout } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
   const router = useRouter()
-
-  // Debug logging
-  useEffect(() => {
-    console.log('🔍 UserMenu Debug - User object:', {
-      uid: user?.uid,
-      email: user?.email,
-      displayName: user?.displayName,
-      photoURL: user?.photoURL,
-      providerData: user?.providerData,
-      hasPhoto: !!user?.photoURL,
-      imageError,
-    })
-  }, [user, imageError])
 
   // Get user initials for fallback
   const getInitials = (name?: string | null, email?: string | null) => {
@@ -42,15 +30,33 @@ export function UserMenu() {
     return 'U'
   }
 
-  const initials = getInitials(user?.displayName, user?.email)
-  const hasPhoto = user?.photoURL && !imageError
+  // Fix Google photo URL to avoid rate limiting
+  const getOptimizedPhotoURL = (photoURL?: string | null) => {
+    if (!photoURL) return null
 
-  // Debug the photo URL
-  console.log('🖼️ Photo Debug:', {
-    photoURL: user?.photoURL,
-    hasPhoto,
+    // Convert Google photo URL to a more reliable format
+    if (photoURL.includes('googleusercontent.com')) {
+      // Remove size restrictions and add referrer policy bypass
+      return photoURL
+        .replace(/=s\d+-c$/, '=s400-c') // Use larger size
+        .replace(/=w\d+-h\d+/, '=s400-c') // Replace any width/height with square
+    }
+
+    return photoURL
+  }
+
+  const initials = getInitials(user?.displayName, user?.email)
+  const optimizedPhotoURL = getOptimizedPhotoURL(user?.photoURL)
+
+  // Only show photo if we have URL, no error, and it's loaded OR we haven't tried yet
+  const shouldShowPhoto = optimizedPhotoURL && !imageError && (imageLoaded || !imageError)
+
+  console.log('🖼️ Photo Status:', {
+    originalURL: user?.photoURL,
+    optimizedURL: optimizedPhotoURL,
     imageError,
-    initials,
+    imageLoaded,
+    shouldShowPhoto,
   })
 
   const handleLogout = async () => {
@@ -73,15 +79,58 @@ export function UserMenu() {
     router.push('/settings')
   }
 
-  const handleImageError = () => {
-    console.log('❌ Profile image failed to load:', user?.photoURL)
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    console.log('❌ Profile image failed to load:', optimizedPhotoURL)
     setImageError(true)
+    setImageLoaded(false)
   }
 
   const handleImageLoad = () => {
-    console.log('✅ Profile image loaded successfully:', user?.photoURL)
+    console.log('✅ Profile image loaded successfully:', optimizedPhotoURL)
     setImageError(false)
+    setImageLoaded(true)
   }
+
+  // Reset image state when photo URL changes
+  useEffect(() => {
+    if (optimizedPhotoURL) {
+      setImageError(false)
+      setImageLoaded(false)
+    }
+  }, [optimizedPhotoURL])
+
+  const AvatarImage = ({ size = 'w-10 h-10', className = '' }) => (
+    <div
+      className={`
+      relative ${size} rounded-full overflow-hidden 
+      bg-gradient-to-br from-blue-500 to-purple-600 
+      flex items-center justify-center
+      ${className}
+    `}
+    >
+      {shouldShowPhoto ? (
+        <>
+          <img
+            src={optimizedPhotoURL!}
+            alt={user?.displayName || user?.email || 'User'}
+            className='w-full h-full object-cover'
+            onError={handleImageError}
+            onLoad={handleImageLoad}
+            loading='lazy'
+            referrerPolicy='no-referrer'
+            style={{
+              imageRendering: 'auto',
+              backfaceVisibility: 'hidden',
+            }}
+          />
+          {/* Online indicator */}
+          <div className='absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-gray-900 rounded-full'></div>
+        </>
+      ) : (
+        <span className='font-bold text-white text-sm'>{initials}</span>
+      )}
+    </div>
+  )
 
   return (
     <div className='relative'>
@@ -95,32 +144,7 @@ export function UserMenu() {
           group
         '
       >
-        {/* Avatar */}
-        <div
-          className='
-          relative w-10 h-10 rounded-full overflow-hidden 
-          bg-gradient-to-br from-blue-500 to-purple-600 
-          flex items-center justify-center
-          ring-2 ring-white/20 group-hover:ring-white/40 transition-all duration-200
-        '
-        >
-          {hasPhoto ? (
-            <>
-              <img
-                src={user.photoURL}
-                alt={user.displayName || user.email || 'User'}
-                className='w-full h-full object-cover'
-                onError={handleImageError}
-                onLoad={handleImageLoad}
-                crossOrigin='anonymous'
-              />
-              {/* Online indicator */}
-              <div className='absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-gray-900 rounded-full'></div>
-            </>
-          ) : (
-            <span className='font-bold text-white text-sm'>{initials}</span>
-          )}
-        </div>
+        <AvatarImage className='ring-2 ring-white/20 group-hover:ring-white/40 transition-all duration-200' />
 
         {/* Dropdown Arrow */}
         <ChevronDown
@@ -130,15 +154,6 @@ export function UserMenu() {
           `}
         />
       </button>
-
-      {/* Debug Info (remove in production) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className='absolute top-12 right-0 bg-black/90 text-white p-2 rounded text-xs max-w-xs z-50'>
-          <p>Photo URL: {user?.photoURL || 'null'}</p>
-          <p>Has Photo: {hasPhoto ? 'YES' : 'NO'}</p>
-          <p>Image Error: {imageError ? 'YES' : 'NO'}</p>
-        </div>
-      )}
 
       {/* Dropdown Menu */}
       {isOpen && (
@@ -156,28 +171,7 @@ export function UserMenu() {
             {/* User Info Header */}
             <div className='px-4 py-4 border-b border-white/10 bg-gradient-to-r from-blue-600/20 to-purple-600/20'>
               <div className='flex items-center gap-3'>
-                {/* Larger Avatar */}
-                <div
-                  className='
-                  relative w-12 h-12 rounded-full overflow-hidden 
-                  bg-gradient-to-br from-blue-500 to-purple-600 
-                  flex items-center justify-center
-                  ring-2 ring-white/20
-                '
-                >
-                  {hasPhoto ? (
-                    <img
-                      src={user.photoURL}
-                      alt={user.displayName || user.email || 'User'}
-                      className='w-full h-full object-cover'
-                      onError={handleImageError}
-                      onLoad={handleImageLoad}
-                      crossOrigin='anonymous'
-                    />
-                  ) : (
-                    <span className='font-bold text-white'>{initials}</span>
-                  )}
-                </div>
+                <AvatarImage size='w-12 h-12' className='ring-2 ring-white/20' />
 
                 {/* User Details */}
                 <div className='flex-1 min-w-0'>
@@ -186,7 +180,7 @@ export function UserMenu() {
                   {/* Account Type Badge */}
                   <div className='mt-1'>
                     <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-500/20 text-blue-300'>
-                      {user?.photoURL ? 'Google Account' : 'Email Account'}
+                      {shouldShowPhoto ? 'Google Account' : 'Email Account'}
                     </span>
                   </div>
                 </div>

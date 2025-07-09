@@ -1,65 +1,52 @@
-// src/app/api/settings/route.ts
+// Replace your /src/app/api/settings/route.ts with this version
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-
-// Helper function to get user ID from request (same pattern as positions)
-async function getUserIdFromRequest(request: NextRequest): Promise<string> {
-  // Try to get from headers first
-  const userIdFromHeader = request.headers.get('x-user-id');
-  if (userIdFromHeader) {
-    return userIdFromHeader;
-  }
-
-  // Fallback: get or create default user (same as trades API)
-  try {
-    const firstUser = await db.user.findFirst();
-    if (firstUser) {
-      return firstUser.id;
-    }
-    
-    // If no users exist, create a default one
-    const defaultUser = await db.user.create({
-      data: {
-        firebaseUid: 'default-user',
-        email: 'user@example.com',
-        displayName: 'Default User',
-      },
-    });
-    
-    return defaultUser.id;
-  } catch (error) {
-    console.error('Error getting user ID:', error);
-    throw new Error('Unable to determine user ID');
-  }
-}
+import { requireAuth } from '@/lib/auth-helpers';
 
 // GET /api/settings - Get user settings
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getUserIdFromRequest(request);
+    // Require authentication
+    const userId = await requireAuth(request);
+    console.log('🔍 Fetching settings for user:', userId);
 
-    // Get user settings
+    // Get settings for this specific user only
     let settings = await db.userSettings.findUnique({
-      where: { userId },
+      where: { userId }, // User isolation
     });
 
-    // Create default settings if they don't exist
+    // Create default settings if they don't exist for this user
     if (!settings) {
+      console.log('📝 Creating default settings for user:', userId);
       settings = await db.userSettings.create({
         data: {
-          userId,
+          userId, // Ensure settings belong to authenticated user
           defaultCurrency: 'USD',
           displayCurrency: 'USD',
           taxRate: 25.0,
           defaultFee: 9.99,
           theme: 'dark',
+          dateFormat: 'MM/dd/yyyy',
+          notifyTrades: true,
+          notifyPriceAlerts: false,
+          notifyMonthly: true,
         },
       });
     }
 
+    console.log('✅ Settings fetched for user:', userId);
+
     return NextResponse.json({ settings });
   } catch (error) {
-    console.error('Error fetching settings:', error);
+    console.error('❌ Error fetching settings:', error);
+    
+    if (error instanceof Error && error.message === 'Authentication required') {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Failed to fetch settings' },
       { status: 500 }
@@ -70,7 +57,10 @@ export async function GET(request: NextRequest) {
 // PUT /api/settings - Update user settings
 export async function PUT(request: NextRequest) {
   try {
-    const userId = await getUserIdFromRequest(request);
+    // Require authentication
+    const userId = await requireAuth(request);
+    console.log('🔍 Updating settings for user:', userId);
+
     const body = await request.json();
     
     // Filter out fields that shouldn't be updated by the client
@@ -82,18 +72,17 @@ export async function PUT(request: NextRequest) {
       ...allowedUpdates
     } = body;
     
-    console.log('⚙️ Settings API: Updating settings for user:', userId);
-    console.log('📝 Settings API: Allowed updates:', allowedUpdates);
+    console.log('📝 Settings API: Allowed updates for user:', userId, allowedUpdates);
     
-    // Update user settings
+    // Update settings for this specific user only
     const settings = await db.userSettings.upsert({
-      where: { userId },
+      where: { userId }, // User isolation
       update: {
         ...allowedUpdates,
         updatedAt: new Date(),
       },
       create: {
-        userId,
+        userId, // Ensure settings belong to authenticated user
         defaultCurrency: allowedUpdates.defaultCurrency || 'USD',
         displayCurrency: allowedUpdates.displayCurrency || 'USD',
         taxRate: allowedUpdates.taxRate || 25.0,
@@ -106,10 +95,18 @@ export async function PUT(request: NextRequest) {
       },
     });
 
-    console.log('✅ Settings API: Settings updated successfully');
+    console.log('✅ Settings updated successfully for user:', userId);
     return NextResponse.json({ settings });
   } catch (error) {
-    console.error('❌ Settings API: Error updating settings:', error);
+    console.error('❌ Error updating settings:', error);
+    
+    if (error instanceof Error && error.message === 'Authentication required') {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Failed to update settings' },
       { status: 500 }

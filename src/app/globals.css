@@ -1212,3 +1212,879 @@
     height: 18px;
   }
 }
+
+/* Watchlist Dark Theme CSS - Add this to your globals.css */
+
+/* Override the search input styling for watchlist */
+.watchlist-search-input {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(148, 163, 184, 0.15) !important;
+  border-radius: 12px !important;
+  color: var(--text-primary) !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  transition: all 0.3s ease !important;
+}
+
+.watchlist-search-input:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  outline: none !important;
+}
+
+.watchlist-search-input::placeholder {
+  color: var(--text-secondary) !important;
+  opacity: 0.7 !important;
+}
+
+/* Folder input styling */
+.watchlist-folder-input {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(148, 163, 184, 0.15) !important;
+  border-radius: 12px !important;
+  color: var(--text-primary) !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  transition: all 0.3s ease !important;
+}
+
+.watchlist-folder-input:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  outline: none !important;
+}
+
+/* Select dropdown styling */
+.watchlist-select {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(148, 163, 184, 0.15) !important;
+  border-radius: 12px !important;
+  color: var(--text-primary) !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  appearance: none !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+  background-position: right 12px center !important;
+  background-repeat: no-repeat !important;
+  background-size: 16px !important;
+  padding-right: 40px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+}
+
+.watchlist-select:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  outline: none !important;
+}
+
+/* Button styling for watchlist */
+.watchlist-button-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  color: white !important;
+  font-weight: 600 !important;
+  padding: 12px 20px !important;
+  font-size: 14px !important;
+  transition: all 0.3s ease !important;
+  cursor: pointer !important;
+}
+
+.watchlist-button-primary:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3) !important;
+}
+
+.watchlist-button-secondary {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  border-radius: 12px !important;
+  color: var(--text-primary) !important;
+  font-weight: 500 !important;
+  padding: 12px 20px !important;
+  font-size: 14px !important;
+  transition: all 0.3s ease !important;
+  cursor: pointer !important;
+}
+
+.watchlist-button-secondary:hover {
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  background: rgba(59, 130, 246, 0.05) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Folder card styling */
+.watchlist-folder-card {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(148, 163, 184, 0.1) !important;
+  border-radius: 16px !important;
+  transition: all 0.3s ease !important;
+}
+
+.watchlist-folder-card:hover {
+  border-color: rgba(148, 163, 184, 0.2) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Stock item styling - TradingView inspired */
+.watchlist-stock-item {
+  background: rgba(51, 65, 85, 0.3) !important;
+  border: 1px solid rgba(148, 163, 184, 0.05) !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+  cursor: pointer !important;
+  margin-bottom: 2px !important;
+}
+
+.watchlist-stock-item:hover {
+  background: rgba(51, 65, 85, 0.6) !important;
+  border-color: rgba(59, 130, 246, 0.2) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Table header styling */
+.watchlist-table-header {
+  background: rgba(51, 65, 85, 0.2) !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1) !important;
+  padding: 8px 12px !important;
+  border-radius: 6px !important;
+  margin-bottom: 4px !important;
+}
+
+/* Add folder card styling */
+.watchlist-add-folder-card {
+  background: var(--bg-primary) !important;
+  border: 1px solid rgba(148, 163, 184, 0.15) !important;
+  border-radius: 16px !important;
+  padding: 16px !important;
+}
+
+/* Search results dropdown */
+.watchlist-search-results {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+}
+
+.watchlist-search-result-item {
+  padding: 12px 16px !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1) !important;
+  transition: all 0.3s ease !important;
+  cursor: pointer !important;
+}
+
+.watchlist-search-result-item:hover {
+  background: rgba(51, 65, 85, 0.5) !important;
+}
+
+.watchlist-search-result-item:last-child {
+  border-bottom: none !important;
+}
+
+/* OLED specific overrides - STRONGER ENFORCEMENT */
+body.oled .watchlist-search-input,
+.oled .watchlist-search-input,
+[data-theme="oled"] .watchlist-search-input {
+  background: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+body.oled .watchlist-folder-input,
+.oled .watchlist-folder-input,
+[data-theme="oled"] .watchlist-folder-input {
+  background: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+body.oled .watchlist-select,
+.oled .watchlist-select,
+[data-theme="oled"] .watchlist-select {
+  background: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+}
+
+body.oled .watchlist-button-secondary,
+.oled .watchlist-button-secondary,
+[data-theme="oled"] .watchlist-button-secondary {
+  background: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+body.oled .watchlist-folder-card,
+.oled .watchlist-folder-card,
+[data-theme="oled"] .watchlist-folder-card {
+  background: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+body.oled .watchlist-stock-item,
+.oled .watchlist-stock-item,
+[data-theme="oled"] .watchlist-stock-item {
+  background: rgba(26, 26, 26, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+body.oled .watchlist-stock-item:hover,
+.oled .watchlist-stock-item:hover,
+[data-theme="oled"] .watchlist-stock-item:hover {
+  background: rgba(26, 26, 26, 0.9) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+body.oled .watchlist-table-header,
+.oled .watchlist-table-header,
+[data-theme="oled"] .watchlist-table-header {
+  background: rgba(26, 26, 26, 0.4) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+body.oled .watchlist-add-folder-card,
+.oled .watchlist-add-folder-card,
+[data-theme="oled"] .watchlist-add-folder-card {
+  background: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.oled .watchlist-search-results,
+.oled .watchlist-search-results,
+[data-theme="oled"] .watchlist-search-results {
+  background: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+body.oled .watchlist-search-result-item:hover,
+.oled .watchlist-search-result-item:hover,
+[data-theme="oled"] .watchlist-search-result-item:hover {
+  background: rgba(26, 26, 26, 0.8) !important;
+}
+
+/* Force override any conflicting styles */
+.watchlist-container input[type="text"],
+.watchlist-container select {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(148, 163, 184, 0.15) !important;
+  color: var(--text-primary) !important;
+}
+
+/* OLED theme overrides for inputs */
+body.oled .watchlist-container input[type="text"],
+body.oled .watchlist-container select,
+.oled .watchlist-container input[type="text"],
+.oled .watchlist-container select,
+[data-theme="oled"] .watchlist-container input[type="text"],
+[data-theme="oled"] .watchlist-container select {
+  background: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+/* Icon styling in watchlist */
+.watchlist-icon {
+  color: var(--text-secondary) !important;
+  transition: all 0.3s ease !important;
+}
+
+.watchlist-icon:hover {
+  color: #3b82f6 !important;
+}
+
+/* Price and change indicators */
+.watchlist-price-positive {
+  color: #10b981 !important;
+}
+
+.watchlist-price-negative {
+  color: #ef4444 !important;
+}
+
+.watchlist-price-neutral {
+  color: var(--text-primary) !important;
+}
+
+/* Live indicator dot */
+.watchlist-live-dot {
+  background: #10b981 !important;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5) !important;
+  animation: pulse 2s infinite !important;
+}
+
+/* Drag and drop visual feedback */
+.watchlist-drag-overlay {
+  background: rgba(59, 130, 246, 0.9) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Column alignment helpers */
+.watchlist-col-symbol {
+  text-align: center !important;
+}
+
+.watchlist-col-price {
+  text-align: center !important;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
+  letter-spacing: 0.025em !important;
+}
+
+.watchlist-col-change {
+  text-align: center !important;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
+  letter-spacing: 0.025em !important;
+}
+
+/* Remove any conflicting Tailwind classes that might be causing the grey appearance */
+.watchlist-container * {
+  --tw-bg-opacity: 1 !important;
+  --tw-text-opacity: 1 !important;
+  --tw-border-opacity: 1 !important;
+}
+
+/* Specific fixes for search input container */
+.watchlist-search-container {
+  position: relative !important;
+}
+
+.watchlist-search-container input {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(148, 163, 184, 0.15) !important;
+  color: var(--text-primary) !important;
+}
+
+/* OLED search container overrides */
+body.oled .watchlist-search-container input,
+.oled .watchlist-search-container input,
+[data-theme="oled"] .watchlist-search-container input {
+  background: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+.watchlist-search-container svg {
+  color: var(--text-secondary) !important;
+}
+
+/* Make sure all text uses the theme colors */
+.watchlist-text-primary {
+  color: var(--text-primary) !important;
+}
+
+.watchlist-text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+/* Override any bg-gray classes */
+.watchlist-container .bg-gray-700,
+.watchlist-container .bg-gray-800 {
+  background-color: var(--bg-secondary) !important;
+}
+
+.watchlist-container .bg-gray-600 {
+  background-color: var(--bg-tertiary) !important;
+}
+
+.watchlist-container .border-gray-600,
+.watchlist-container .border-gray-700 {
+  border-color: rgba(148, 163, 184, 0.15) !important;
+}
+
+.watchlist-container .text-gray-400 {
+  color: var(--text-secondary) !important;
+}
+
+.watchlist-container .text-white {
+  color: var(--text-primary) !important;
+}
+
+/* TradingView-style improvements */
+.watchlist-stock-item:nth-child(even) {
+  background: rgba(51, 65, 85, 0.2) !important;
+}
+
+.watchlist-stock-item:nth-child(odd) {
+  background: rgba(51, 65, 85, 0.1) !important;
+}
+
+.oled .watchlist-stock-item:nth-child(even) {
+  background: rgba(26, 26, 26, 0.4) !important;
+}
+
+.oled .watchlist-stock-item:nth-child(odd) {
+  background: rgba(26, 26, 26, 0.2) !important;
+}
+
+/* Smooth price animations */
+.watchlist-price-animate {
+  transition: all 0.5s ease !important;
+}
+
+/* Enhanced hover states */
+.watchlist-stock-item:hover .watchlist-col-price,
+.watchlist-stock-item:hover .watchlist-col-change {
+  font-weight: 600 !important;
+}
+
+/* Mobile responsive adjustments for watchlist */
+@media (max-width: 768px) {
+  .watchlist-stock-item {
+    padding: 12px 8px !important;
+  }
+
+  .watchlist-col-price {
+    font-size: 13px !important;
+  }
+
+  .watchlist-col-change {
+    font-size: 12px !important;
+  }
+}
+
+/* Icon styling in watchlist */
+.watchlist-icon {
+  color: var(--text-secondary) !important;
+  transition: all 0.3s ease !important;
+}
+
+.watchlist-icon:hover {
+  color: #3b82f6 !important;
+}
+
+/* Price and change indicators */
+.watchlist-price-positive {
+  color: #10b981 !important;
+}
+
+.watchlist-price-negative {
+  color: #ef4444 !important;
+}
+
+.watchlist-price-neutral {
+  color: var(--text-primary) !important;
+}
+
+/* Live indicator dot */
+.watchlist-live-dot {
+  background: #10b981 !important;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5) !important;
+  animation: pulse 2s infinite !important;
+}
+
+/* Drag and drop visual feedback */
+.watchlist-drag-overlay {
+  background: rgba(59, 130, 246, 0.9) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Column alignment helpers */
+.watchlist-col-symbol {
+  text-align: left !important;
+}
+
+.watchlist-col-price {
+  text-align: center !important;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
+  letter-spacing: 0.025em !important;
+}
+
+.watchlist-col-change {
+  text-align: center !important;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
+  letter-spacing: 0.025em !important;
+}
+
+/* Remove any conflicting Tailwind classes that might be causing the grey appearance */
+.watchlist-container * {
+  --tw-bg-opacity: 1 !important;
+  --tw-text-opacity: 1 !important;
+  --tw-border-opacity: 1 !important;
+}
+
+/* Specific fixes for search input container */
+.watchlist-search-container {
+  position: relative !important;
+}
+
+.watchlist-search-container input {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(148, 163, 184, 0.15) !important;
+  color: var(--text-primary) !important;
+}
+
+.watchlist-search-container svg {
+  color: var(--text-secondary) !important;
+}
+
+/* Make sure all text uses the theme colors */
+.watchlist-text-primary {
+  color: var(--text-primary) !important;
+}
+
+.watchlist-text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+/* Override any bg-gray classes */
+.watchlist-container .bg-gray-700,
+.watchlist-container .bg-gray-800 {
+  background-color: var(--bg-secondary) !important;
+}
+
+.watchlist-container .bg-gray-600 {
+  background-color: var(--bg-tertiary) !important;
+}
+
+.watchlist-container .border-gray-600,
+.watchlist-container .border-gray-700 {
+  border-color: rgba(148, 163, 184, 0.15) !important;
+}
+
+.watchlist-container .text-gray-400 {
+  color: var(--text-secondary) !important;
+}
+
+.watchlist-container .text-white {
+  color: var(--text-primary) !important;
+}
+
+/* TradingView-style improvements */
+.watchlist-stock-item:nth-child(even) {
+  background: rgba(51, 65, 85, 0.2) !important;
+}
+
+.watchlist-stock-item:nth-child(odd) {
+  background: rgba(51, 65, 85, 0.1) !important;
+}
+
+.oled .watchlist-stock-item:nth-child(even) {
+  background: rgba(26, 26, 26, 0.4) !important;
+}
+
+.oled .watchlist-stock-item:nth-child(odd) {
+  background: rgba(26, 26, 26, 0.2) !important;
+}
+
+/* Smooth price animations */
+.watchlist-price-animate {
+  transition: all 0.5s ease !important;
+}
+
+/* Enhanced hover states */
+.watchlist-stock-item:hover .watchlist-col-price,
+.watchlist-stock-item:hover .watchlist-col-change {
+  font-weight: 600 !important;
+}
+
+/* Mobile responsive adjustments for watchlist */
+@media (max-width: 768px) {
+  .watchlist-stock-item {
+    padding: 12px 8px !important;
+  }
+
+  .watchlist-col-price {
+    font-size: 13px !important;
+  }
+
+  .watchlist-col-change {
+    font-size: 12px !important;
+  }
+}
+
+/* Watchlist Dark Theme CSS - Add this to your globals.css */
+
+/* Override the search input styling for watchlist */
+.watchlist-search-input {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(148, 163, 184, 0.15) !important;
+  border-radius: 12px !important;
+  color: var(--text-primary) !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  transition: all 0.3s ease !important;
+}
+
+.watchlist-search-input:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  outline: none !important;
+}
+
+.watchlist-search-input::placeholder {
+  color: var(--text-secondary) !important;
+  opacity: 0.7 !important;
+}
+
+/* Folder input styling */
+.watchlist-folder-input {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(148, 163, 184, 0.15) !important;
+  border-radius: 12px !important;
+  color: var(--text-primary) !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  transition: all 0.3s ease !important;
+}
+
+.watchlist-folder-input:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  outline: none !important;
+}
+
+/* Select dropdown styling */
+.watchlist-select {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(148, 163, 184, 0.15) !important;
+  border-radius: 12px !important;
+  color: var(--text-primary) !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  appearance: none !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+  background-position: right 12px center !important;
+  background-repeat: no-repeat !important;
+  background-size: 16px !important;
+  padding-right: 40px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+}
+
+.watchlist-select:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  outline: none !important;
+}
+
+/* Button styling for watchlist */
+.watchlist-button-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  color: white !important;
+  font-weight: 600 !important;
+  padding: 12px 20px !important;
+  font-size: 14px !important;
+  transition: all 0.3s ease !important;
+  cursor: pointer !important;
+}
+
+.watchlist-button-primary:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3) !important;
+}
+
+.watchlist-button-secondary {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  border-radius: 12px !important;
+  color: var(--text-primary) !important;
+  font-weight: 500 !important;
+  padding: 12px 20px !important;
+  font-size: 14px !important;
+  transition: all 0.3s ease !important;
+  cursor: pointer !important;
+}
+
+.watchlist-button-secondary:hover {
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  background: rgba(59, 130, 246, 0.05) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Folder card styling */
+.watchlist-folder-card {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(148, 163, 184, 0.1) !important;
+  border-radius: 16px !important;
+  transition: all 0.3s ease !important;
+}
+
+.watchlist-folder-card:hover {
+  border-color: rgba(148, 163, 184, 0.2) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Stock item styling */
+.watchlist-stock-item {
+  background: rgba(51, 65, 85, 0.5) !important;
+  border: 1px solid rgba(148, 163, 184, 0.1) !important;
+  border-radius: 12px !important;
+  transition: all 0.3s ease !important;
+  cursor: pointer !important;
+}
+
+.watchlist-stock-item:hover {
+  background: rgba(51, 65, 85, 0.8) !important;
+  border-color: rgba(59, 130, 246, 0.2) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Add folder card styling */
+.watchlist-add-folder-card {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(148, 163, 184, 0.15) !important;
+  border-radius: 16px !important;
+  padding: 16px !important;
+}
+
+/* Search results dropdown */
+.watchlist-search-results {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+}
+
+.watchlist-search-result-item {
+  padding: 12px 16px !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1) !important;
+  transition: all 0.3s ease !important;
+  cursor: pointer !important;
+}
+
+.watchlist-search-result-item:hover {
+  background: rgba(51, 65, 85, 0.5) !important;
+}
+
+.watchlist-search-result-item:last-child {
+  border-bottom: none !important;
+}
+
+/* OLED specific overrides */
+.oled .watchlist-search-input,
+.oled .watchlist-folder-input,
+.oled .watchlist-select {
+  background: #111111 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.oled .watchlist-button-secondary {
+  background: #111111 !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.oled .watchlist-folder-card {
+  background: #111111 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.oled .watchlist-stock-item {
+  background: rgba(26, 26, 26, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.oled .watchlist-stock-item:hover {
+  background: rgba(26, 26, 26, 1) !important;
+}
+
+.oled .watchlist-add-folder-card {
+  background: #111111 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.oled .watchlist-search-results {
+  background: #111111 !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.oled .watchlist-search-result-item:hover {
+  background: rgba(26, 26, 26, 0.8) !important;
+}
+
+/* Icon styling in watchlist */
+.watchlist-icon {
+  color: var(--text-secondary) !important;
+  transition: all 0.3s ease !important;
+}
+
+.watchlist-icon:hover {
+  color: #3b82f6 !important;
+}
+
+/* Price and change indicators */
+.watchlist-price-positive {
+  color: #10b981 !important;
+}
+
+.watchlist-price-negative {
+  color: #ef4444 !important;
+}
+
+.watchlist-price-neutral {
+  color: var(--text-primary) !important;
+}
+
+/* Live indicator dot */
+.watchlist-live-dot {
+  background: #10b981 !important;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5) !important;
+  animation: pulse 2s infinite !important;
+}
+
+/* Drag and drop visual feedback */
+.watchlist-drag-overlay {
+  background: rgba(59, 130, 246, 0.9) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Remove any conflicting Tailwind classes that might be causing the grey appearance */
+.watchlist-container * {
+  --tw-bg-opacity: 1 !important;
+  --tw-text-opacity: 1 !important;
+  --tw-border-opacity: 1 !important;
+}
+
+/* Specific fixes for search input container */
+.watchlist-search-container {
+  position: relative !important;
+}
+
+.watchlist-search-container input {
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(148, 163, 184, 0.15) !important;
+  color: var(--text-primary) !important;
+}
+
+.watchlist-search-container svg {
+  color: var(--text-secondary) !important;
+}
+
+/* Make sure all text uses the theme colors */
+.watchlist-text-primary {
+  color: var(--text-primary) !important;
+}
+
+.watchlist-text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+/* Override any bg-gray classes */
+.watchlist-container .bg-gray-700,
+.watchlist-container .bg-gray-800 {
+  background-color: var(--bg-secondary) !important;
+}
+
+.watchlist-container .bg-gray-600 {
+  background-color: var(--bg-tertiary) !important;
+}
+
+.watchlist-container .border-gray-600,
+.watchlist-container .border-gray-700 {
+  border-color: rgba(148, 163, 184, 0.15) !important;
+}
+
+.watchlist-container .text-gray-400 {
+  color: var(--text-secondary) !important;
+}
+
+.watchlist-container .text-white {
+  color: var(--text-primary) !important;
+}

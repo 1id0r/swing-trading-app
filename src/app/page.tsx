@@ -1,15 +1,86 @@
-// app/page.tsx (With relative import - immediate fix)
+// app/page.tsx - Complete version with mobile optimizations
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useAuth } from './contexts/AuthContext' // ← Relative import
-import { TrendingUp, BarChart3, ArrowRight, Shield, Smartphone } from 'lucide-react'
+import { useAuth } from './contexts/AuthContext'
+import { TrendingUp, BarChart3, ArrowRight, Shield, Smartphone, X } from 'lucide-react'
+
+// Mobile Menu Component (inline for simplicity)
+function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  if (!isOpen) return null
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div className='fixed inset-0 bg-black/50 backdrop-blur-sm z-40 sm:hidden' onClick={onClose} />
+
+      {/* Menu */}
+      <div className='fixed top-0 right-0 h-full w-80 max-w-[90vw] bg-gray-900/95 backdrop-blur-md border-l border-gray-700 z-50 sm:hidden'>
+        <div className='flex flex-col h-full'>
+          {/* Header */}
+          <div className='flex items-center justify-between p-6 border-b border-gray-700'>
+            <h2 className='text-xl font-bold theme-text-primary'>Menu</h2>
+            <button
+              onClick={onClose}
+              className='p-2 theme-text-secondary hover:theme-text-primary rounded-lg transition-colors'
+            >
+              <X className='w-5 h-5' />
+            </button>
+          </div>
+
+          {/* Menu Items */}
+          <div className='flex-1 p-6'>
+            <div className='space-y-4'>
+              <Link
+                href='/login'
+                onClick={onClose}
+                className='
+                  w-full flex items-center justify-center gap-2 
+                  theme-button-secondary !py-4 !px-6 text-lg
+                '
+              >
+                Sign In
+              </Link>
+
+              <Link
+                href='/signup'
+                onClick={onClose}
+                className='
+                  w-full flex items-center justify-center gap-2 
+                  theme-button-primary !py-4 !px-6 text-lg
+                '
+              >
+                Get Started
+                <ArrowRight className='w-5 h-5' />
+              </Link>
+            </div>
+
+            {/* Additional Info */}
+            <div className='mt-12 p-4 theme-card'>
+              <h3 className='font-semibold theme-text-primary mb-2'>Professional Trading Platform</h3>
+              <p className='theme-text-secondary text-sm'>
+                Track trades, calculate real P&L with FIFO methodology, and manage your portfolio with advanced
+                analytics.
+              </p>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className='p-6 border-t border-gray-700'>
+            <p className='text-xs theme-text-secondary text-center'>Built for serious swing traders</p>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
 
 export default function HomePage() {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     console.log('🏠 HomePage - Auth state:', {
@@ -69,7 +140,8 @@ export default function HomePage() {
             <span className='text-xl font-bold theme-text-primary'>SwingTrader</span>
           </div>
 
-          <div className='flex items-center gap-4'>
+          {/* Desktop buttons - hidden on mobile */}
+          <div className='hidden sm:flex items-center gap-4'>
             <Link href='/login' className='theme-button-secondary !py-3 !px-6'>
               Sign In
             </Link>
@@ -78,13 +150,25 @@ export default function HomePage() {
               <ArrowRight className='w-4 h-4' />
             </Link>
           </div>
+
+          {/* Mobile menu button */}
+          <div className='sm:hidden'>
+            <button onClick={() => setIsMobileMenuOpen(true)} className='theme-button-secondary !py-2 !px-3'>
+              <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 6h16M4 12h16M4 18h16' />
+              </svg>
+            </button>
+          </div>
         </nav>
       </header>
+
+      {/* Mobile Menu */}
+      <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
 
       {/* Hero Section */}
       <main className='container mx-auto px-6 py-16'>
         <div className='text-center max-w-4xl mx-auto'>
-          <h1 className='text-5xl md:text-6xl font-bold theme-text-primary mb-6'>
+          <h1 className='text-4xl md:text-5xl lg:text-6xl font-bold theme-text-primary mb-6'>
             Professional
             <span className='bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent'>
               {' '}
@@ -93,11 +177,12 @@ export default function HomePage() {
             Portfolio
           </h1>
 
-          <p className='text-xl theme-text-secondary mb-12 max-w-2xl mx-auto'>
+          <p className='text-lg md:text-xl theme-text-secondary mb-12 max-w-2xl mx-auto'>
             Track your trades, calculate real P&L with FIFO methodology, and manage your portfolio with advanced
             analytics. Built for serious swing traders.
           </p>
 
+          {/* Hero CTA Buttons - Now the primary CTAs on mobile */}
           <div className='flex flex-col sm:flex-row gap-4 justify-center mb-16'>
             <Link
               href='/signup'

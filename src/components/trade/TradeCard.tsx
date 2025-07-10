@@ -1,4 +1,4 @@
-// components/trade/TradeCard.tsx
+// components/trade/TradeCard.tsx - Fixed version with correct interface
 import { ArrowUpRight, ArrowDownRight, MoreHorizontal } from 'lucide-react'
 
 interface Trade {
@@ -7,10 +7,12 @@ interface Trade {
   company: string
   action: 'BUY' | 'SELL'
   shares: number
-  price: number
+  pricePerShare: number // Changed from 'price' to 'pricePerShare'
   date: string
-  profit?: number
+  netProfit?: number // Changed from 'profit' to 'netProfit'
   fee: number
+  totalValue?: number // Added totalValue field
+  totalCost?: number // Added totalCost field
 }
 
 interface TradeCardProps {
@@ -20,18 +22,19 @@ interface TradeCardProps {
 }
 
 export function TradeCard({ trade, onEdit, onDelete }: TradeCardProps) {
-  const totalValue = trade.shares * trade.price
+  // Use totalValue if available, otherwise calculate from shares * pricePerShare
+  const totalValue = trade.totalValue || trade.shares * trade.pricePerShare
 
   return (
-    <div className='theme-card   p-4    hover:bg-gray-800/70 transition-colors'>
+    <div className='theme-card p-4 hover:bg-gray-800/70 transition-colors'>
       <div className='flex items-center justify-between mb-3'>
         <div className='flex items-center gap-3'>
-          <div className='w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center theme-text-primary   font-bold text-sm'>
+          <div className='w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center theme-text-primary font-bold text-sm'>
             {trade.ticker.charAt(0)}
           </div>
           <div>
-            <div className='theme-text-primary   font-medium'>{trade.ticker}</div>
-            <div className='text-sm theme-text-secondary  '>{trade.company}</div>
+            <div className='theme-text-primary font-medium'>{trade.ticker}</div>
+            <div className='text-sm theme-text-secondary'>{trade.company}</div>
           </div>
         </div>
 
@@ -46,7 +49,7 @@ export function TradeCard({ trade, onEdit, onDelete }: TradeCardProps) {
           </div>
 
           {(onEdit || onDelete) && (
-            <button className='theme-text-secondary   hover:theme-text-primary   p-1'>
+            <button className='theme-text-secondary hover:theme-text-primary p-1'>
               <MoreHorizontal className='w-4 h-4' />
             </button>
           )}
@@ -55,30 +58,30 @@ export function TradeCard({ trade, onEdit, onDelete }: TradeCardProps) {
 
       <div className='grid grid-cols-3 gap-4 text-sm'>
         <div>
-          <div className='theme-text-secondary  '>Shares</div>
-          <div className='theme-text-primary   font-medium'>{trade.shares.toLocaleString()}</div>
+          <div className='theme-text-secondary'>Shares</div>
+          <div className='theme-text-primary font-medium'>{trade.shares.toLocaleString()}</div>
         </div>
         <div>
-          <div className='theme-text-secondary  '>Price</div>
-          <div className='theme-text-primary   font-medium'>${trade.price.toFixed(2)}</div>
+          <div className='theme-text-secondary'>Price</div>
+          <div className='theme-text-primary font-medium'>${trade.pricePerShare.toFixed(2)}</div>
         </div>
         <div>
-          <div className='theme-text-secondary  '>P&L</div>
+          <div className='theme-text-secondary'>P&L</div>
           <div
             className={`font-medium ${
-              trade.profit !== undefined
-                ? trade.profit > 0
+              trade.netProfit !== undefined && trade.netProfit !== null
+                ? trade.netProfit > 0
                   ? 'text-green-400'
                   : 'text-red-400'
-                : 'theme-text-secondary  '
+                : 'theme-text-secondary'
             }`}
           >
-            {trade.profit !== undefined ? `$${trade.profit.toFixed(2)}` : 'Open'}
+            {trade.netProfit !== undefined && trade.netProfit !== null ? `${trade.netProfit.toFixed(2)}` : 'Open'}
           </div>
         </div>
       </div>
 
-      <div className='mt-3 pt-3 border-t border-gray-700 flex justify-between text-xs theme-text-secondary  '>
+      <div className='mt-3 pt-3 border-t border-gray-700 flex justify-between text-xs theme-text-secondary'>
         <span>{new Date(trade.date).toLocaleDateString()}</span>
         <span>Total: ${totalValue.toFixed(2)}</span>
       </div>

@@ -1,4 +1,4 @@
-// Replace your /src/app/portfolio/page.tsx with this fixed version
+// Replace your /src/app/portfolio/page.tsx with this modified version
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
@@ -6,28 +6,41 @@ import { MobileLayout } from '@/components/layout/MobileLayout'
 import { useTradeStore } from '@/stores/useTradeStore'
 import { useRealtimePrices } from '@/hooks/useRealtimePrices'
 import { MarketHoursService, MarketStatus } from '@/lib/marketHours'
-import { TrendingUp, TrendingDown, RefreshCw, Wifi, WifiOff, Clock, AlertCircle, Globe } from 'lucide-react'
+import { TrendingUp, TrendingDown, RefreshCw, Wifi, WifiOff, Clock, AlertCircle } from 'lucide-react'
+
+interface Position {
+  id: string
+  ticker: string
+  company: string
+  logo?: string
+  totalShares: number
+  averagePrice: number
+  totalCost: number
+  currentPrice?: number
+  lastPriceUpdate?: string
+}
 
 export default function PortfolioPage() {
   const { positions, portfolioStats, fetchPositions, isLoadingPositions, error } = useTradeStore()
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [marketStatus, setMarketStatus] = useState<MarketStatus | null>(null)
-  const [selectedMarket, setSelectedMarket] = useState<'US' | 'ISRAEL'>('US')
+  // Removed selectedMarket state since we only have US market now
+  const selectedMarket = 'US' // Fixed to US only
 
   // Get symbols from positions
   const symbols = useMemo(() => {
-    return positions?.map((p) => p.ticker) || []
+    return positions?.map((p: Position) => p.ticker) || []
   }, [positions])
 
   // Use real-time prices hook (only when market is open)
   const shouldUseRealtime = marketStatus?.isOpen || false
   const { prices, isConnected, isLoading: pricesLoading } = useRealtimePrices(shouldUseRealtime ? symbols : [])
 
-  // Update market status when market selection changes
+  // Update market status - always US market now
   useEffect(() => {
     const updateMarketStatus = () => {
-      const status = MarketHoursService.getCurrentMarketStatus(selectedMarket)
+      const status = MarketHoursService.getCurrentMarketStatus('US') // Always US
       setMarketStatus(status)
       console.log('📊 Market status updated:', status)
     }
@@ -36,11 +49,9 @@ export default function PortfolioPage() {
     const interval = setInterval(updateMarketStatus, 60000) // Update every minute
 
     return () => clearInterval(interval)
-  }, [selectedMarket])
+  }, []) // Removed selectedMarket dependency
 
-  const handleMarketChange = (market: 'US' | 'ISRAEL') => {
-    setSelectedMarket(market)
-  }
+  // Removed handleMarketChange function since we don't need it
 
   useEffect(() => {
     // Load initial positions
@@ -93,7 +104,7 @@ export default function PortfolioPage() {
     let totalValue = 0
     let totalCost = 0
 
-    positions.forEach((position) => {
+    positions.forEach((position: Position) => {
       const livePrice = prices[position.ticker]
       const currentPrice = livePrice?.price || position.currentPrice || position.averagePrice
 
@@ -116,44 +127,19 @@ export default function PortfolioPage() {
   return (
     <MobileLayout title='Portfolio' subtitle={`${safePositions.length} active positions`}>
       <div className='space-y-6'>
-        {/* Market Selector */}
-        <div className='space-y-2'>
-          <div className='flex items-center justify-center gap-2'>
-            <Globe className='w-4 h-4 text-gray-400' />
-            <div className='flex bg-gray-800 rounded-lg p-1'>
-              <button
-                onClick={() => handleMarketChange('US')}
-                className={`px-3 py-1 rounded text-sm transition-colors ${
-                  selectedMarket === 'US' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                US Market
-              </button>
-              <button
-                onClick={() => handleMarketChange('ISRAEL')}
-                className={`px-3 py-1 rounded text-sm transition-colors ${
-                  selectedMarket === 'ISRAEL' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                Israeli Market
-              </button>
+        {/* Market Status */}
+        {marketStatus && (
+          <div className='flex items-center justify-center'>
+            <div
+              className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs ${
+                marketStatus.isOpen ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
+              }`}
+            >
+              <Clock className='w-3 h-3' />
+              <span>{MarketHoursService.getMarketStatusMessage(marketStatus)}</span>
             </div>
           </div>
-
-          {/* Market Status */}
-          {marketStatus && (
-            <div className='flex items-center justify-center'>
-              <div
-                className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs ${
-                  marketStatus.isOpen ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
-                }`}
-              >
-                <Clock className='w-3 h-3' />
-                <span>{MarketHoursService.getMarketStatusMessage(marketStatus)}</span>
-              </div>
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Connection Status */}
         <div className='flex items-center justify-between text-xs theme-text-secondary'>
@@ -282,7 +268,7 @@ export default function PortfolioPage() {
               <div className='text-sm theme-text-secondary'>Add some trades to see your portfolio</div>
             </div>
           ) : (
-            safePositions.map((position) => {
+            safePositions.map((position: Position) => {
               // Get live price or fallback to stored price
               const livePrice = prices[position.ticker]
               const currentPrice = livePrice?.price || position.currentPrice || position.averagePrice

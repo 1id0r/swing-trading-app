@@ -1,8 +1,7 @@
-// Update your /src/app/contexts/AuthContext.tsx to share auth state with store
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User, onAuthStateChanged, signOut, updateProfile } from 'firebase/auth'
+import { User, onAuthStateChanged, signOut } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 
 interface AuthContextType {
@@ -10,7 +9,7 @@ interface AuthContextType {
   loading: boolean
   dbUserId: string | null
   logout: () => Promise<void>
-  updateUserProfile: (updates: { displayName?: string; photoURL?: string }) => Promise<void>
+  getAuthHeaders: () => Promise<{ [key: string]: string }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -22,93 +21,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log(
-        '🔐 Auth state changed:',
-        firebaseUser
-          ? {
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              displayName: firebaseUser.displayName,
-              photoURL: firebaseUser.photoURL,
-            }
-          : null
-      )
+      console.log('🔐 Auth state changed:', firebaseUser?.email || 'null')
 
       setUser(firebaseUser)
 
       if (firebaseUser) {
         try {
-          // Get or create user in database
-          const dbUser = await getOrCreateDatabaseUser(firebaseUser)
-          setDbUserId(dbUser.id)
+          // Get or create user in database using Firebase ID token
+          const idToken = await firebaseUser.getIdToken()
 
-          // Share auth state with store (for API calls)
-          ;(window as any).__AUTH_CONTEXT__ = {
-            user: firebaseUser,
-            dbUserId: dbUser.id,
+          const response = await fetch('/api/auth/user', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${idToken}`,
+            },
+          })
+
+          if (response.ok) {
+            const { user: dbUser } = await response.json()
+            setDbUserId(dbUser.id)
+
+            // Persist to localStorage for page refreshes
+            localStorage.setItem('dbUserId', dbUser.id)
+
+            console.log('✅ Database user set:', dbUser.id)
+          } else {
+            throw new Error('Failed to get/create database user')
           }
-
-          console.log('✅ Database user set:', dbUser.id)
         } catch (error) {
-          console.error('❌ Failed to get/create database user:', error)
+          console.error('❌ Database user error:', error)
           setDbUserId(null)
-          ;(window as any).__AUTH_CONTEXT__ = null
+          localStorage.removeItem('dbUserId')
         }
       } else {
+        // User signed out
         setDbUserId(null)
-        ;(window as any).__AUTH_CONTEXT__ = null
+        localStorage.removeItem('dbUserId')
       }
 
       setLoading(false)
     })
 
-    return () => unsubscribe()
+    // On app load, try to restore dbUserId from localStorage
+    const savedDbUserId = localStorage.getItem('dbUserId')
+    if (savedDbUserId && !dbUserId) {
+      setDbUserId(savedDbUserId)
+    }
+
+    return unsubscribe
   }, [])
 
-  const getOrCreateDatabaseUser = async (firebaseUser: User) => {
-    try {
-      // First, try to get existing user
-      const response = await fetch('/api/auth/get-user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firebaseUid: firebaseUser.uid,
-        }),
-      })
+  const getAuthHeaders = async (): Promise<{ [key: string]: string }> => {
+    if (!user) {
+      throw new Error('User not authenticated')
+    }
 
-      if (response.ok) {
-        const userData = await response.json()
-        console.log('👤 Found existing user:', userData)
-        return userData.user
-      }
+    const idToken = await user.getIdToken()
 
-      // If user doesn't exist, create new one
-      console.log('👤 Creating new user in database...')
-      const createResponse = await fetch('/api/auth/create-user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firebaseUid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
-          photoURL: firebaseUser.photoURL,
-        }),
-      })
-
-      if (!createResponse.ok) {
-        throw new Error(`Failed to create user: ${createResponse.status}`)
-      }
-
-      const newUserData = await createResponse.json()
-      console.log('✅ Created new user:', newUserData)
-      return newUserData.user
-    } catch (error) {
-      console.error('❌ Error getting/creating database user:', error)
-      throw error
+    return {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${idToken}`,
     }
   }
 
@@ -116,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await signOut(auth)
       setDbUserId(null)
-      ;(window as any).__AUTH_CONTEXT__ = null
+      localStorage.removeItem('dbUserId')
       console.log('✅ User signed out')
     } catch (error) {
       console.error('❌ Logout failed:', error)
@@ -124,44 +97,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const updateUserProfile = async (updates: { displayName?: string; photoURL?: string }) => {
-    if (!user) throw new Error('No user logged in')
-
-    try {
-      await updateProfile(user, updates)
-      console.log('✅ Profile updated:', updates)
-
-      // Optionally update in your database too
-      await fetch('/api/auth/update-profile', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firebaseUid: user.uid,
-          ...updates,
-        }),
-      })
-    } catch (error) {
-      console.error('❌ Failed to update profile:', error)
-      throw error
-    }
-  }
-
-  const value = {
-    user,
-    loading,
-    dbUserId,
-    logout,
-    updateUserProfile,
-  }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={{ user, loading, dbUserId, logout, getAuthHeaders }}>{children}</AuthContext.Provider>
+  )
 }
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context

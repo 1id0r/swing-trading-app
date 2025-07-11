@@ -1,14 +1,14 @@
-// Replace your /src/app/api/trades/route.ts with this version
+// src/app/api/trades/route.ts - FIXED VERSION
 import { NextRequest, NextResponse } from 'next/server'
 import { db, dbHelpers } from '@/lib/db'
-import { getUserIdFromRequest, requireAuth } from '@/lib/auth-helpers'
+import { requireAuth } from '@/lib/auth' // ✅ NEW import
 
 // GET /api/trades - Get all trades for authenticated user
 export async function GET(request: NextRequest) {
   try {
-    // Require authentication
-    const userId = await requireAuth(request)
-    console.log('🔍 Fetching trades for user:', userId)
+    // ✅ NEW: Use unified auth - returns user object
+    const user = await requireAuth(request)
+    console.log('🔍 Fetching trades for user:', user.id)
 
     const searchParams = request.nextUrl.searchParams
     const ticker = searchParams.get('ticker')
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     // Get trades ONLY for this specific user
     const trades = await db.trade.findMany({
       where: { 
-        userId, // This ensures user isolation
+        userId: user.id, // ✅ Use user.id from auth
         ...(ticker && { ticker })
       },
       orderBy: { date: 'desc' },
@@ -29,12 +29,12 @@ export async function GET(request: NextRequest) {
     // Count total trades for this user only
     const total = await db.trade.count({
       where: { 
-        userId,
+        userId: user.id,
         ...(ticker && { ticker })
       },
     })
 
-    console.log(`✅ Found ${trades.length} trades for user ${userId}`)
+    console.log(`✅ Found ${trades.length} trades for user ${user.id}`)
 
     return NextResponse.json({
       trades,
@@ -48,9 +48,9 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('❌ Error fetching trades:', error)
     
-    if (error instanceof Error && error.message === 'Authentication required') {
+    if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { error: 'Unauthorized' },
         { status: 401 }
       )
     }
@@ -65,9 +65,9 @@ export async function GET(request: NextRequest) {
 // POST /api/trades - Create new trade for authenticated user
 export async function POST(request: NextRequest) {
   try {
-    // Require authentication
-    const userId = await requireAuth(request)
-    console.log('🔍 Creating trade for user:', userId)
+    // ✅ NEW: Use unified auth - returns user object
+    const user = await requireAuth(request)
+    console.log('🔍 Creating trade for user:', user.id)
 
     const body = await request.json()
     const {
@@ -108,11 +108,11 @@ export async function POST(request: NextRequest) {
           ticker,
           shares,
           new Date(date),
-          userId // Pass userId for user isolation
+          user.id // ✅ Use user.id from auth
         )
         
         grossProfit = totalValue - costBasis
-        const settings = await dbHelpers.getUserSettings(userId)
+        const settings = await dbHelpers.getUserSettings(user.id)
         taxAmount = grossProfit > 0 ? (grossProfit * settings.taxRate) / 100 : 0
         netProfit = grossProfit - (fee || 0) - taxAmount
       } catch (error) {
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     // Create trade with proper user association
     const trade = await db.trade.create({
       data: {
-        userId, // Ensure trade belongs to authenticated user
+        userId: user.id, // ✅ Use user.id from auth
         ticker,
         company,
         logo,
@@ -147,17 +147,17 @@ export async function POST(request: NextRequest) {
     })
 
     // Update position for this user
-    await dbHelpers.updatePosition(ticker, userId)
+    await dbHelpers.updatePosition(ticker, user.id)
 
-    console.log('✅ Trade created successfully for user:', userId)
+    console.log('✅ Trade created successfully for user:', user.id)
 
     return NextResponse.json({ trade })
   } catch (error) {
     console.error('❌ Error creating trade:', error)
     
-    if (error instanceof Error && error.message === 'Authentication required') {
+    if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { error: 'Unauthorized' },
         { status: 401 }
       )
     }

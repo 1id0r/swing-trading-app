@@ -1,7 +1,7 @@
 // Replace your /src/app/api/trades/[id]/route.ts with this version
 import { NextRequest, NextResponse } from 'next/server';
 import { db, dbHelpers } from '@/lib/db';
-import { requireAuth } from '@/lib/auth-helpers';
+import { requireAuth } from '@/lib/auth';
 
 // GET /api/trades/[id] - Get single trade
 export async function GET(
@@ -9,17 +9,17 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Require authentication
-    const userId = await requireAuth(request);
+    // ✅ Fixed: Returns user object, not userId string
+    const user = await requireAuth(request);
     const params = await context.params;
     
-    console.log('🔍 Fetching trade for user:', userId, 'trade ID:', params.id);
+    console.log('🔍 Fetching trade for user:', user.id, 'trade ID:', params.id);
 
     // Get trade only if it belongs to the authenticated user
     const trade = await db.trade.findFirst({
       where: { 
         id: params.id,
-        userId: userId // User isolation - critical security check
+        userId: user.id // ✅ Use user.id
       },
     });
 
@@ -30,15 +30,15 @@ export async function GET(
       );
     }
 
-    console.log('✅ Trade fetched for user:', userId);
+    console.log('✅ Trade fetched for user:', user.id);
 
     return NextResponse.json({ trade });
   } catch (error) {
     console.error('❌ Error fetching trade:', error);
     
-    if (error instanceof Error && error.message === 'Authentication required') {
+    if (error instanceof Error && error.message === 'Unauthorized') { // ✅ Fixed error message
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }
@@ -56,19 +56,19 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Require authentication
-    const userId = await requireAuth(request);
+    // ✅ Fixed: Returns user object, not userId string
+    const user = await requireAuth(request);
     const params = await context.params;
     const body = await request.json();
     const { shares, pricePerShare, fee, date } = body;
 
-    console.log('🔍 Updating trade for user:', userId, 'trade ID:', params.id);
+    console.log('🔍 Updating trade for user:', user.id, 'trade ID:', params.id);
 
     // Get the existing trade only if it belongs to the authenticated user
     const existingTrade = await db.trade.findFirst({
       where: { 
         id: params.id,
-        userId: userId // User isolation - critical security check
+        userId: user.id // ✅ Use user.id
       },
     });
 
@@ -98,16 +98,15 @@ export async function PUT(
 
     if (existingTrade.action === 'SELL') {
       try {
-        // Pass userId to ensure FIFO calculation uses only this user's trades
         costBasis = await dbHelpers.calculateFIFOCostBasis(
           existingTrade.ticker,
           newShares,
           newDate,
-          userId // User isolation for FIFO calculation
+          user.id // ✅ Use user.id
         );
         
         grossProfit = totalValue - costBasis;
-        const settings = await dbHelpers.getUserSettings(userId);
+        const settings = await dbHelpers.getUserSettings(user.id);
         taxAmount = grossProfit > 0 ? (grossProfit * settings.taxRate) / 100 : 0;
         netProfit = grossProfit - newFee - taxAmount;
       } catch (error) {
@@ -118,11 +117,11 @@ export async function PUT(
       }
     }
 
-    // Update the trade (double-check user ownership)
+    // Update the trade
     const updatedTrade = await db.trade.update({
       where: { 
         id: params.id,
-        userId: userId // Extra security: ensure we only update user's own trades
+        userId: user.id // ✅ Use user.id
       },
       data: {
         shares: newShares,
@@ -139,17 +138,17 @@ export async function PUT(
     });
 
     // Update the position for this user
-    await dbHelpers.updatePosition(existingTrade.ticker, userId);
+    await dbHelpers.updatePosition(existingTrade.ticker, user.id);
 
-    console.log('✅ Trade updated successfully for user:', userId);
+    console.log('✅ Trade updated successfully for user:', user.id);
 
     return NextResponse.json({ trade: updatedTrade });
   } catch (error) {
     console.error('❌ Error updating trade:', error);
     
-    if (error instanceof Error && error.message === 'Authentication required') {
+    if (error instanceof Error && error.message === 'Unauthorized') { // ✅ Fixed error message
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }
@@ -167,17 +166,17 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Require authentication
-    const userId = await requireAuth(request);
+    // ✅ Fixed: Returns user object, not userId string
+    const user = await requireAuth(request);
     const params = await context.params;
     
-    console.log('🔍 Deleting trade for user:', userId, 'trade ID:', params.id);
+    console.log('🔍 Deleting trade for user:', user.id, 'trade ID:', params.id);
 
     // Get trade only if it belongs to the authenticated user
     const trade = await db.trade.findFirst({
       where: { 
         id: params.id,
-        userId: userId // User isolation - critical security check
+        userId: user.id // ✅ Use user.id
       },
     });
 
@@ -188,26 +187,26 @@ export async function DELETE(
       );
     }
 
-    // Delete the trade (double-check user ownership)
+    // Delete the trade
     await db.trade.delete({
       where: { 
         id: params.id,
-        userId: userId // Extra security: ensure we only delete user's own trades
+        userId: user.id // ✅ Use user.id
       },
     });
 
     // Update the position for this user
-    await dbHelpers.updatePosition(trade.ticker, userId);
+    await dbHelpers.updatePosition(trade.ticker, user.id);
 
-    console.log('✅ Trade deleted successfully for user:', userId);
+    console.log('✅ Trade deleted successfully for user:', user.id);
 
     return NextResponse.json({ message: 'Trade deleted successfully' });
   } catch (error) {
     console.error('❌ Error deleting trade:', error);
     
-    if (error instanceof Error && error.message === 'Authentication required') {
+    if (error instanceof Error && error.message === 'Unauthorized') { // ✅ Fixed error message
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }

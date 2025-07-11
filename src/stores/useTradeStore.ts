@@ -1,8 +1,9 @@
-// stores/useTradeStore.ts - Fixed version with proper interface
+// stores/useTradeStore.ts - FIXED VERSION with Firebase ID token auth
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
+import { auth } from '@/lib/firebase' // Add this import
 
-// Interfaces
+// Interfaces (keep all your existing interfaces)
 interface Trade {
   id: string
   ticker: string
@@ -55,7 +56,6 @@ interface Pagination {
   totalPages: number
 }
 
-// Main store interface
 interface TradeStore {
   // State
   trades: Trade[]
@@ -87,22 +87,26 @@ interface TradeStore {
   reset: () => void
 }
 
-// Helper function to get authenticated headers
-const getAuthHeaders = () => {
-  // Get the current user from your auth context
-  // This is a simplified version - adjust based on your auth implementation
-  const authData = typeof window !== 'undefined' ? 
-    (window as any).__AUTH_CONTEXT__ || {} : {}
-  
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+// ✅ NEW: Helper function to get Firebase ID token headers
+const getAuthHeaders = async (): Promise<Record<string, string>> => {
+  try {
+    const currentUser = auth.currentUser
+    
+    if (!currentUser) {
+      throw new Error('User not authenticated')
+    }
+
+    // Get the Firebase ID token
+    const idToken = await currentUser.getIdToken()
+    
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken}`, // ✅ This is what your API expects
+    }
+  } catch (error) {
+    console.error('❌ Error getting auth headers:', error)
+    throw new Error('Authentication failed')
   }
-  
-  if (authData?.dbUserId) {
-    headers['x-user-id'] = authData.dbUserId
-  }
-  
-  return headers
 }
 
 // Initial state
@@ -124,12 +128,12 @@ export const useTradeStore = create<TradeStore>()(
     (set, get) => ({
       ...initialState,
 
-      // Fetch trades with user authentication
+      // Fetch trades with Firebase authentication
       fetchTrades: async (options = {}) => {
         set({ isLoading: true, error: null })
         
         try {
-          console.log('🚀 Fetching trades with auth...')
+          console.log('🚀 Fetching trades with Firebase auth...')
           
           const { ticker, limit = 50, offset = 0 } = options
           const params = new URLSearchParams({
@@ -138,9 +142,10 @@ export const useTradeStore = create<TradeStore>()(
             ...(ticker && { ticker }),
           })
 
+          const headers = await getAuthHeaders() // ✅ Get Firebase token
           const response = await fetch(`/api/trades?${params}`, {
             method: 'GET',
-            headers: getAuthHeaders(),
+            headers,
           })
           
           if (!response.ok) {
@@ -165,16 +170,17 @@ export const useTradeStore = create<TradeStore>()(
         }
       },
 
-      // Add trade with user authentication
+      // Add trade with Firebase authentication
       addTrade: async (trade) => {
         set({ isLoading: true, error: null })
         
         try {
-          console.log('🚀 Adding trade with auth:', trade)
+          console.log('🚀 Adding trade with Firebase auth:', trade)
           
+          const headers = await getAuthHeaders() // ✅ Get Firebase token
           const response = await fetch('/api/trades', {
             method: 'POST',
-            headers: getAuthHeaders(),
+            headers,
             body: JSON.stringify(trade),
           })
 
@@ -204,16 +210,17 @@ export const useTradeStore = create<TradeStore>()(
         }
       },
 
-      // Update trade with user authentication
+      // Update trade with Firebase authentication
       updateTrade: async (id, updates) => {
         set({ isLoading: true, error: null })
         
         try {
-          console.log('🚀 Updating trade with auth:', id, updates)
+          console.log('🚀 Updating trade with Firebase auth:', id, updates)
           
+          const headers = await getAuthHeaders() // ✅ Get Firebase token
           const response = await fetch(`/api/trades/${id}`, {
             method: 'PUT',
-            headers: getAuthHeaders(),
+            headers,
             body: JSON.stringify(updates),
           })
 
@@ -240,16 +247,17 @@ export const useTradeStore = create<TradeStore>()(
         }
       },
 
-      // Delete trade with user authentication
+      // Delete trade with Firebase authentication
       deleteTrade: async (id) => {
         set({ isLoading: true, error: null })
         
         try {
-          console.log('🚀 Deleting trade with auth:', id)
+          console.log('🚀 Deleting trade with Firebase auth:', id)
           
+          const headers = await getAuthHeaders() // ✅ Get Firebase token
           const response = await fetch(`/api/trades/${id}`, {
             method: 'DELETE',
-            headers: getAuthHeaders(),
+            headers,
           })
 
           if (!response.ok) {
@@ -275,17 +283,18 @@ export const useTradeStore = create<TradeStore>()(
         }
       },
 
-      // Fetch positions with user authentication
+      // Fetch positions with Firebase authentication
       fetchPositions: async (updatePrices = false) => {
         set({ isLoadingPositions: true, error: null })
         
         try {
-          console.log('🚀 Fetching positions with auth...')
+          console.log('🚀 Fetching positions with Firebase auth...')
           
           const params = updatePrices ? '?updatePrices=true' : ''
+          const headers = await getAuthHeaders() // ✅ Get Firebase token
           const response = await fetch(`/api/positions${params}`, {
             method: 'GET',
-            headers: getAuthHeaders(),
+            headers,
           })
           
           if (!response.ok) {
@@ -310,14 +319,15 @@ export const useTradeStore = create<TradeStore>()(
         }
       },
 
-      // Update position prices with user authentication
+      // Update position prices with Firebase authentication
       updatePositionPrices: async () => {
         try {
-          console.log('🚀 Updating position prices with auth...')
+          console.log('🚀 Updating position prices with Firebase auth...')
           
+          const headers = await getAuthHeaders() // ✅ Get Firebase token
           const response = await fetch('/api/positions/update-prices', {
             method: 'POST',
-            headers: getAuthHeaders(),
+            headers,
           })
           
           if (!response.ok) {
@@ -337,16 +347,17 @@ export const useTradeStore = create<TradeStore>()(
         }
       },
 
-      // Fetch dashboard data with user authentication
+      // Fetch dashboard data with Firebase authentication
       fetchDashboardData: async () => {
         set({ isLoadingDashboard: true, error: null })
         
         try {
-          console.log('🚀 Fetching dashboard data with auth...')
+          console.log('🚀 Fetching dashboard data with Firebase auth...')
           
+          const headers = await getAuthHeaders() // ✅ Get Firebase token
           const response = await fetch('/api/dashboard', {
             method: 'GET',
-            headers: getAuthHeaders(),
+            headers,
           })
           
           if (!response.ok) {

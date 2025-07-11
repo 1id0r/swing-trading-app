@@ -1,19 +1,15 @@
-// Replace your /src/app/api/positions/update-prices/route.ts with this version
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { stockApi } from '@/lib/stockApi';
-import { requireAuth } from '@/lib/auth-helpers';
+import { requireAuth } from '@/lib/auth'
 
-// POST /api/positions/update-prices - Update current prices for user's positions only
 export async function POST(request: NextRequest) {
   try {
-    // Require authentication
-    const userId = await requireAuth(request);
-    console.log('🔍 Updating prices for user:', userId);
+    const user = await requireAuth(request)
+    console.log('🔍 Updating prices for user:', user.id);
 
-    // Get positions for this specific user only
     const positions = await db.position.findMany({
-      where: { userId }, // User isolation
+      where: { userId: user.id }, // ✅ Use user.id consistently
       select: {
         id: true,
         ticker: true,
@@ -30,18 +26,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log(`📈 Updating prices for ${positions.length} positions for user ${userId}...`);
+    console.log(`📈 Updating prices for ${positions.length} positions for user ${user.id}...`);
 
-    // Get all tickers for this user
     const tickers = positions.map(p => p.ticker);
-    
-    // Fetch current prices for all positions
     const quotes = await stockApi.getMultipleQuotes(tickers);
     
     let updatedCount = 0;
     const errors: string[] = [];
 
-    // Update each position with current price and calculate P&L
     for (const position of positions) {
       try {
         const quote = quotes[position.ticker];
@@ -52,11 +44,10 @@ export async function POST(request: NextRequest) {
           const unrealizedPnL = currentValue - position.totalCost;
           const unrealizedPnLPercent = position.totalCost > 0 ? (unrealizedPnL / position.totalCost) * 100 : 0;
 
-          // Update position with user isolation double-check
           await db.position.update({
             where: { 
               id: position.id,
-              userId: userId // Extra security: ensure we only update user's own positions
+              userId: user.id // ✅ Use user.id consistently
             },
             data: {
               currentPrice: currentPrice,
@@ -68,33 +59,33 @@ export async function POST(request: NextRequest) {
           });
 
           updatedCount++;
-          console.log(`✅ Updated ${position.ticker} for user ${userId}: $${currentPrice.toFixed(2)} (P&L: ${unrealizedPnL >= 0 ? '+' : ''}$${unrealizedPnL.toFixed(2)})`);
+          console.log(`✅ Updated ${position.ticker} for user ${user.id}: $${currentPrice.toFixed(2)} (P&L: ${unrealizedPnL >= 0 ? '+' : ''}$${unrealizedPnL.toFixed(2)})`);
         } else {
           errors.push(`Failed to get price for ${position.ticker}`);
-          console.warn(`⚠️ No price data for ${position.ticker} (user: ${userId})`);
+          console.warn(`⚠️ No price data for ${position.ticker} (user: ${user.id})`);
         }
       } catch (error) {
         errors.push(`Error updating ${position.ticker}: ${error}`);
-        console.error(`❌ Error updating ${position.ticker} for user ${userId}:`, error);
+        console.error(`❌ Error updating ${position.ticker} for user ${user.id}:`, error);
       }
     }
 
-    console.log(`✅ Updated ${updatedCount} of ${positions.length} positions for user ${userId}`);
+    console.log(`✅ Updated ${updatedCount} of ${positions.length} positions for user ${user.id}`);
 
     return NextResponse.json({
       message: `Updated prices for ${updatedCount} of ${positions.length} positions`,
       updatedCount,
       totalPositions: positions.length,
-      userId: userId, // Include for debugging
+      userId: user.id, // ✅ Use user.id consistently
       errors: errors.length > 0 ? errors : undefined,
     });
 
   } catch (error) {
     console.error('❌ Error updating position prices:', error);
     
-    if (error instanceof Error && error.message === 'Authentication required') {
+    if (error instanceof Error && error.message === 'Unauthorized') { // ✅ Fixed error message
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }

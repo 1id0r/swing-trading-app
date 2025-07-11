@@ -154,18 +154,6 @@ export default function DashboardPage() {
             <QuickActions />
           </>
         )}
-
-        {/* Debug Info (remove in production) */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className='bg-slate-800/50 border border-slate-600 rounded-lg p-3 text-xs'>
-            <p className='text-slate-400'>Debug Info:</p>
-            <p className='text-slate-300'>User ID: {dbUserId}</p>
-            <p className='text-slate-300'>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
-            <p className='text-slate-300'>Dashboard Loading: {isLoadingDashboard ? 'Yes' : 'No'}</p>
-            <p className='text-slate-300'>Updates: {updateCount}</p>
-            <p className='text-slate-300'>Last Update: {lastUpdate?.toLocaleTimeString() || 'Never'}</p>
-          </div>
-        )}
       </div>
     </MobileLayout>
   )

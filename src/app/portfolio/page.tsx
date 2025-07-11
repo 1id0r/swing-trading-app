@@ -1,4 +1,4 @@
-// Replace your /src/app/portfolio/page.tsx with this version that uses the watchlist store
+// Enhanced Portfolio Page with Staggered Loading and Fallback Data
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
@@ -26,6 +26,7 @@ import {
   Move,
   Eye,
   BarChart3,
+  Loader2,
 } from 'lucide-react'
 
 interface Position {
@@ -64,6 +65,12 @@ export default function PortfolioPage() {
   const [newFolderName, setNewFolderName] = useState('')
   const [editingFolder, setEditingFolder] = useState<string | null>(null)
 
+  // New state for fallback data
+  const [fallbackData, setFallbackData] = useState<Record<string, any>>({})
+  const [dataLoadingStates, setDataLoadingStates] = useState<Record<string, 'loading' | 'live' | 'fallback' | 'error'>>(
+    {}
+  )
+
   // Get symbols from positions and watchlist
   const symbols = useMemo(() => {
     const positionSymbols = positions?.map((p: Position) => p.ticker) || []
@@ -74,6 +81,156 @@ export default function PortfolioPage() {
   // Use real-time prices hook (only when market is open)
   const shouldUseRealtime = marketStatus?.isOpen || false
   const { prices, isConnected, isLoading: pricesLoading } = useRealtimePrices(shouldUseRealtime ? symbols : [])
+
+  // Initialize loading states
+  useEffect(() => {
+    const newStates: Record<string, 'loading' | 'live' | 'fallback' | 'error'> = {}
+    symbols.forEach((symbol) => {
+      newStates[symbol] = 'loading'
+    })
+    setDataLoadingStates(newStates)
+  }, [symbols])
+
+  // Fetch fallback data for symbols
+  const fetchFallbackData = async (symbolsToFetch: string[]) => {
+    if (symbolsToFetch.length === 0) return
+
+    try {
+      console.log('📊 Fetching fallback data for:', symbolsToFetch)
+
+      const response = await fetch('/api/stocks/batch-quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbols: symbolsToFetch }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const newFallbackData = { ...fallbackData }
+        const newStates = { ...dataLoadingStates }
+
+        symbolsToFetch.forEach((symbol) => {
+          const quote = data.quotes[symbol]
+          if (quote && quote.c > 0) {
+            newFallbackData[symbol] = {
+              price: quote.c,
+              change: quote.d || 0,
+              changePercent: quote.dp || 0,
+              previousClose: quote.pc || 0,
+              timestamp: Date.now(),
+            }
+
+            // Only set to fallback if we don't have live data
+            if (!prices[symbol] || !prices[symbol].isLive) {
+              newStates[symbol] = 'fallback'
+            }
+
+            console.log(`✅ Fallback data for ${symbol}: $${quote.c} (${quote.d >= 0 ? '+' : ''}${quote.d})`)
+          } else {
+            newStates[symbol] = 'error'
+            console.warn(`⚠️ No valid data for ${symbol}`)
+          }
+        })
+
+        setFallbackData(newFallbackData)
+        setDataLoadingStates(newStates)
+      }
+    } catch (error) {
+      console.error('Failed to fetch fallback data:', error)
+      const newStates = { ...dataLoadingStates }
+      symbolsToFetch.forEach((symbol) => {
+        newStates[symbol] = 'error'
+      })
+      setDataLoadingStates(newStates)
+    }
+  }
+
+  // Load fallback data immediately, then stagger for slow symbols
+  useEffect(() => {
+    if (symbols.length === 0) return
+
+    // Immediately load fallback data for all symbols
+    fetchFallbackData(symbols)
+
+    // Set up staggered timeouts for symbols that might be slow
+    const timeouts: NodeJS.Timeout[] = []
+
+    symbols.forEach((symbol, index) => {
+      // Refresh specific symbols that don't get live data within 10 seconds
+      const timeout = setTimeout(() => {
+        if (!prices[symbol] || !prices[symbol].isLive) {
+          console.log(`⏰ Refreshing slow symbol: ${symbol}`)
+          fetchFallbackData([symbol])
+        }
+      }, 10000 + index * 2000) // 10s, 12s, 14s, etc.
+
+      timeouts.push(timeout)
+    })
+
+    return () => {
+      timeouts.forEach(clearTimeout)
+    }
+  }, [symbols])
+
+  // Update loading states based on live data
+  useEffect(() => {
+    const newStates = { ...dataLoadingStates }
+    let hasChanges = false
+
+    Object.keys(prices).forEach((symbol) => {
+      const price = prices[symbol]
+      if (price && price.isLive && newStates[symbol] !== 'live') {
+        newStates[symbol] = 'live'
+        hasChanges = true
+        console.log(`🔴 ${symbol} now has live data`)
+      }
+    })
+
+    if (hasChanges) {
+      setDataLoadingStates(newStates)
+    }
+  }, [prices, dataLoadingStates])
+
+  // Get the best available data for a symbol
+  const getBestPriceData = (symbol: string) => {
+    const livePrice = prices[symbol]
+    const fallback = fallbackData[symbol]
+    const loadingState = dataLoadingStates[symbol]
+
+    // Prefer live data
+    if (livePrice && livePrice.isLive && livePrice.price > 0) {
+      return {
+        price: livePrice.price,
+        change: livePrice.change,
+        changePercent: livePrice.changePercent,
+        isLive: true,
+        dataAge: 'live',
+        timestamp: livePrice.timestamp,
+      }
+    }
+
+    // Fall back to static data
+    if (fallback && fallback.price > 0) {
+      return {
+        price: fallback.price,
+        change: fallback.change,
+        changePercent: fallback.changePercent,
+        isLive: false,
+        dataAge: 'fallback',
+        timestamp: fallback.timestamp,
+      }
+    }
+
+    // No data available
+    return {
+      price: 0,
+      change: 0,
+      changePercent: 0,
+      isLive: false,
+      dataAge: 'none',
+      timestamp: 0,
+    }
+  }
 
   // Update market status
   useEffect(() => {
@@ -126,7 +283,10 @@ export default function PortfolioPage() {
     try {
       setIsRefreshing(true)
       console.log('🔄 Manual refresh triggered')
-      await fetchPositions(true)
+
+      // Refresh both live positions and fallback data
+      await Promise.all([fetchPositions(true), fetchFallbackData(symbols)])
+
       setLastUpdate(new Date())
     } catch (error) {
       console.error('Error refreshing prices:', error)
@@ -150,8 +310,8 @@ export default function PortfolioPage() {
     let totalCost = 0
 
     positions.forEach((position: Position) => {
-      const livePrice = prices[position.ticker]
-      const currentPrice = livePrice?.price || position.currentPrice || position.averagePrice
+      const bestPrice = getBestPriceData(position.ticker)
+      const currentPrice = bestPrice.price || position.currentPrice || position.averagePrice
 
       totalCost += position.totalCost
       totalValue += position.totalShares * currentPrice
@@ -163,7 +323,7 @@ export default function PortfolioPage() {
       totalUnrealizedPnL: totalValue - totalCost,
       totalPositions: positions.length,
     }
-  }, [positions, prices])
+  }, [positions, prices, fallbackData])
 
   // Watchlist functions
   const handleAddFolder = () => {
@@ -308,21 +468,6 @@ export default function PortfolioPage() {
               </div>
             )}
 
-            {/* Market Closed Info */}
-            {!marketStatus?.isOpen && !isLoadingPositions && (
-              <div className='bg-blue-500/20 border border-blue-500 rounded-lg p-4'>
-                <div className='flex items-center gap-3'>
-                  <Clock className='w-5 h-5 text-blue-400' />
-                  <div>
-                    <p className='text-blue-400 font-medium'>Market is currently closed</p>
-                    <p className='text-blue-300 text-sm'>
-                      Showing last known prices. Live updates will resume when market opens.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Portfolio Summary */}
             {!isLoadingPositions && (
               <div className='theme-card p-4'>
@@ -358,23 +503,6 @@ export default function PortfolioPage() {
                     <div className='text-sm theme-text-secondary'>Unrealized P&L</div>
                   </div>
                 </div>
-
-                <div className='mt-4 pt-4 border-t border-gray-700 grid grid-cols-2 gap-4 text-sm'>
-                  <div>
-                    <div className='theme-text-secondary'>Total Invested</div>
-                    <div className='theme-text-primary font-medium'>${safeStats.totalCost.toFixed(2)}</div>
-                  </div>
-                  <div>
-                    <div className='theme-text-secondary'>Return %</div>
-                    <div
-                      className={`font-medium ${safeStats.totalUnrealizedPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}
-                    >
-                      {safeStats.totalCost > 0
-                        ? `${((safeStats.totalUnrealizedPnL / safeStats.totalCost) * 100).toFixed(2)}%`
-                        : '0.00%'}
-                    </div>
-                  </div>
-                </div>
               </div>
             )}
 
@@ -387,10 +515,9 @@ export default function PortfolioPage() {
                 </div>
               ) : (
                 safePositions.map((position: Position) => {
-                  // Get live price or fallback to stored price
-                  const livePrice = prices[position.ticker]
-                  const currentPrice = livePrice?.price || position.currentPrice || position.averagePrice
-                  const isLive = !!livePrice?.isLive && marketStatus?.isOpen
+                  const bestPrice = getBestPriceData(position.ticker)
+                  const currentPrice = bestPrice.price || position.currentPrice || position.averagePrice
+                  const isLive = bestPrice.isLive
 
                   // Calculate live P&L
                   const currentValue = position.totalShares * currentPrice
@@ -424,6 +551,9 @@ export default function PortfolioPage() {
                             <div className='flex items-center gap-2'>
                               <div className='theme-text-primary font-medium'>{position.ticker}</div>
                               {isLive && <div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>}
+                              {!isLive && bestPrice.dataAge === 'fallback' && (
+                                <div className='w-2 h-2 bg-blue-500 rounded-full'></div>
+                              )}
                             </div>
                             <div className='text-sm theme-text-secondary truncate'>{position.company}</div>
                           </div>
@@ -473,19 +603,25 @@ export default function PortfolioPage() {
                         <span>Value: ${currentValue.toFixed(2)}</span>
                       </div>
 
-                      {/* Show different status based on market hours */}
-                      {marketStatus?.isOpen && livePrice ? (
-                        <div className='mt-1 text-xs text-green-400 text-center'>
-                          Live • {new Date(livePrice.timestamp).toLocaleTimeString()}
-                        </div>
-                      ) : (
-                        <div className='mt-1 text-xs theme-text-secondary text-center'>
-                          Last:{' '}
-                          {position.lastPriceUpdate
-                            ? new Date(position.lastPriceUpdate).toLocaleTimeString()
-                            : 'Not updated'}
-                        </div>
-                      )}
+                      {/* Show status based on data source */}
+                      <div className='mt-1 text-xs text-center'>
+                        {isLive ? (
+                          <span className='text-green-400'>
+                            Live • {new Date(bestPrice.timestamp).toLocaleTimeString()}
+                          </span>
+                        ) : bestPrice.dataAge === 'fallback' ? (
+                          <span className='text-blue-400'>
+                            Static • {new Date(bestPrice.timestamp).toLocaleTimeString()}
+                          </span>
+                        ) : (
+                          <span className='theme-text-secondary'>
+                            Last:{' '}
+                            {position.lastPriceUpdate
+                              ? new Date(position.lastPriceUpdate).toLocaleTimeString()
+                              : 'Not updated'}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   )
                 })
@@ -611,14 +747,14 @@ export default function PortfolioPage() {
 
                   {/* Folder Items */}
                   {folder.isExpanded && (
-                    <div className='space-y-2 '>
+                    <div className='space-y-2'>
                       {folder.items.length === 0 ? (
                         <div className='text-center py-4 text-sm watchlist-text-secondary'>
                           No symbols in this folder
                         </div>
                       ) : (
                         <>
-                          {/* Header Row - TradingView Style */}
+                          {/* Header Row */}
                           <div className='watchlist-table-header'>
                             <div className='grid grid-cols-12 gap-3 items-center text-xs watchlist-text-secondary font-medium'>
                               <div className='col-span-4 watchlist-col-symbol'>Symbol</div>
@@ -631,25 +767,75 @@ export default function PortfolioPage() {
 
                           {/* Stock Items */}
                           {folder.items.map((item) => {
-                            const livePrice = prices[item.ticker]
-                            const currentPrice = livePrice?.price || 0
-                            const isLive = !!livePrice?.isLive && marketStatus?.isOpen
-                            const change = livePrice?.change || 0
-                            const changePercent = livePrice?.changePercent || 0
+                            const bestPrice = getBestPriceData(item.ticker)
+                            const loadingState = dataLoadingStates[item.ticker]
+                            const currentPrice = bestPrice.price
+                            const isLive = bestPrice.isLive
+                            const change = bestPrice.change
+                            const changePercent = bestPrice.changePercent
+
+                            // Get display status
+                            const getDisplayStatus = () => {
+                              if (loadingState === 'loading' && currentPrice === 0) {
+                                return {
+                                  status: 'loading',
+                                  indicator: <Loader2 className='w-3 h-3 animate-spin text-gray-400' />,
+                                  statusText: 'Loading...',
+                                  statusColor: 'text-gray-400',
+                                }
+                              }
+
+                              if (loadingState === 'error') {
+                                return {
+                                  status: 'error',
+                                  indicator: <AlertCircle className='w-3 h-3 text-red-400' />,
+                                  statusText: 'Error',
+                                  statusColor: 'text-red-400',
+                                }
+                              }
+
+                              if (isLive) {
+                                return {
+                                  status: 'live',
+                                  indicator: <div className='w-2 h-2 bg-green-400 rounded-full animate-pulse'></div>,
+                                  statusText: 'Live',
+                                  statusColor: 'text-green-400',
+                                }
+                              }
+
+                              if (loadingState === 'fallback') {
+                                const ageInMinutes = (Date.now() - bestPrice.timestamp) / 60000
+                                return {
+                                  status: 'fallback',
+                                  indicator: <div className='w-2 h-2 bg-blue-400 rounded-full'></div>,
+                                  statusText: ageInMinutes < 5 ? 'Recent' : `${Math.floor(ageInMinutes)}m ago`,
+                                  statusColor: 'text-blue-400',
+                                }
+                              }
+
+                              return {
+                                status: 'unknown',
+                                indicator: <div className='w-2 h-2 bg-gray-400 rounded-full'></div>,
+                                statusText: '-',
+                                statusColor: 'text-gray-400',
+                              }
+                            }
+
+                            const displayStatus = getDisplayStatus()
 
                             return (
                               <div
                                 key={item.id}
-                                className='watchlist-stock-item p-3'
+                                className='watchlist-stock-item p-3 hover:bg-gray-800/50 transition-colors'
                                 draggable
                                 onDragStart={() => handleDragStart(item, folder.id)}
                                 onClick={() => handleWatchlistItemClick(item)}
                               >
-                                {/* Stock Item Layout - Trading View Style */}
+                                {/* Stock Item Layout */}
                                 <div className='grid grid-cols-12 gap-3 items-center'>
-                                  {/* Symbol & Company - Left Aligned */}
+                                  {/* Symbol & Company */}
                                   <div className='col-span-4 flex items-center gap-2'>
-                                    <div className='w-10 h-  rounded-full flex items-center justify-center text-white font-bold text-xs'>
+                                    <div className='w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs'>
                                       {item.logo ? (
                                         <img
                                           src={item.logo}
@@ -661,37 +847,57 @@ export default function PortfolioPage() {
                                           }}
                                         />
                                       ) : (
-                                        <span>{item.ticker.charAt(0)}</span>
+                                        <div className='w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center'>
+                                          <span className='text-xs'>{item.ticker.charAt(0)}</span>
+                                        </div>
                                       )}
                                     </div>
-                                    <div className='min-w-0'>
+                                    <div className='min-w-0 flex-1'>
                                       <div className='flex items-center gap-2'>
                                         <span className='font-medium watchlist-text-primary text-sm'>
                                           {item.ticker}
                                         </span>
-                                        {isLive && <div className='w-1.5 h-1.5 watchlist-live-dot rounded-full'></div>}
+                                        {displayStatus.indicator}
                                       </div>
-                                      <div className='text-xs watchlist-text-secondary truncate'>{item.company}</div>
+                                      <div className='text-xs watchlist-text-secondary truncate flex items-center gap-2'>
+                                        <span>{item.company}</span>
+                                        <span className={`text-xs ${displayStatus.statusColor}`}>
+                                          {displayStatus.statusText}
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
 
-                                  {/* Current Price - Center */}
+                                  {/* Current Price */}
                                   <div className='col-span-3 watchlist-col-price'>
-                                    <div
-                                      className={`font-medium text-sm watchlist-price-animate ${
-                                        isLive ? 'watchlist-price-positive' : 'watchlist-text-primary'
-                                      }`}
-                                    >
-                                      ${currentPrice.toFixed(2)}
-                                    </div>
+                                    {currentPrice > 0 ? (
+                                      <div
+                                        className={`font-medium text-sm ${
+                                          isLive ? 'text-green-400' : 'watchlist-text-primary'
+                                        }`}
+                                      >
+                                        ${currentPrice.toFixed(2)}
+                                      </div>
+                                    ) : (
+                                      <div className='flex items-center gap-1 text-gray-400'>
+                                        {displayStatus.status === 'loading' ? (
+                                          <>
+                                            <Loader2 className='w-3 h-3 animate-spin' />
+                                            <span className='text-xs'>Loading</span>
+                                          </>
+                                        ) : (
+                                          <span className='text-sm'>$0.00</span>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
 
-                                  {/* Change Points - Center */}
+                                  {/* Change Points */}
                                   <div className='col-span-2 watchlist-col-change'>
-                                    {change !== 0 ? (
+                                    {currentPrice > 0 && change !== 0 ? (
                                       <div
-                                        className={`flex items-center justify-center gap-1 text-sm watchlist-price-animate ${
-                                          change >= 0 ? 'watchlist-price-positive' : 'watchlist-price-negative'
+                                        className={`flex items-center justify-center gap-1 text-sm ${
+                                          change >= 0 ? 'text-green-400' : 'text-red-400'
                                         }`}
                                       >
                                         {change >= 0 ? (
@@ -705,27 +911,27 @@ export default function PortfolioPage() {
                                         </span>
                                       </div>
                                     ) : (
-                                      <span className='text-sm watchlist-text-secondary'>-</span>
+                                      <span className='text-sm text-gray-400 text-center'>-</span>
                                     )}
                                   </div>
 
-                                  {/* Change Percentage - Center */}
+                                  {/* Change Percentage */}
                                   <div className='col-span-2 watchlist-col-change'>
-                                    {changePercent !== 0 ? (
+                                    {currentPrice > 0 && changePercent !== 0 ? (
                                       <div
-                                        className={`text-sm font-medium watchlist-price-animate ${
-                                          changePercent >= 0 ? 'watchlist-price-positive' : 'watchlist-price-negative'
+                                        className={`text-sm font-medium text-center ${
+                                          changePercent >= 0 ? 'text-green-400' : 'text-red-400'
                                         }`}
                                       >
                                         {changePercent >= 0 ? '+' : ''}
                                         {changePercent.toFixed(2)}%
                                       </div>
                                     ) : (
-                                      <span className='text-sm watchlist-text-secondary'>-</span>
+                                      <span className='text-sm text-gray-400 text-center'>-</span>
                                     )}
                                   </div>
 
-                                  {/* Actions - Right */}
+                                  {/* Actions */}
                                   <div className='col-span-1 flex justify-end'>
                                     <button
                                       onClick={(e) => {
@@ -738,6 +944,14 @@ export default function PortfolioPage() {
                                     </button>
                                   </div>
                                 </div>
+
+                                {/* Additional Info Row for Debugging (can be removed) */}
+                                {process.env.NODE_ENV === 'development' && (
+                                  <div className='mt-2 pt-2 border-t border-gray-700 text-xs text-gray-500'>
+                                    State: {loadingState} | Live: {isLive ? 'Yes' : 'No'} | Price: ${currentPrice} |
+                                    Change: {change.toFixed(2)}
+                                  </div>
+                                )}
                               </div>
                             )
                           })}
@@ -749,9 +963,40 @@ export default function PortfolioPage() {
               ))}
             </div>
 
+            {/* Loading Summary */}
+            <div className='bg-gray-800/50 rounded-lg p-3'>
+              <div className='text-xs text-gray-400 mb-2'>Data Status Summary:</div>
+              <div className='grid grid-cols-2 gap-4 text-xs'>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-green-400 rounded-full animate-pulse'></div>
+                  <span className='text-green-400'>
+                    Live Data: {Object.values(dataLoadingStates).filter((s) => s === 'live').length}
+                  </span>
+                </div>
+                <div className='flex items-center gap-2'>
+                  <div className='w-2 h-2 bg-blue-400 rounded-full'></div>
+                  <span className='text-blue-400'>
+                    Static Data: {Object.values(dataLoadingStates).filter((s) => s === 'fallback').length}
+                  </span>
+                </div>
+                <div className='flex items-center gap-2'>
+                  <Loader2 className='w-3 h-3 animate-spin text-gray-400' />
+                  <span className='text-gray-400'>
+                    Loading: {Object.values(dataLoadingStates).filter((s) => s === 'loading').length}
+                  </span>
+                </div>
+                <div className='flex items-center gap-2'>
+                  <AlertCircle className='w-3 h-3 text-red-400' />
+                  <span className='text-red-400'>
+                    Errors: {Object.values(dataLoadingStates).filter((s) => s === 'error').length}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             {/* Drag and Drop Instructions */}
             {draggedItem && (
-              <div className='fixed top-4 left-1/2 transform -translate-x-1/2 watchlist-drag-overlay text-white px-4 py-2 shadow-lg z-50'>
+              <div className='fixed top-4 left-1/2 transform -translate-x-1/2 bg-gray-800 border border-gray-600 rounded-lg text-white px-4 py-2 shadow-lg z-50'>
                 <div className='flex items-center gap-2'>
                   <Move className='w-4 h-4' />
                   <span>Drop on a folder to move "{draggedItem.item.ticker}"</span>

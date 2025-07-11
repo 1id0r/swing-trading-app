@@ -51,14 +51,6 @@ export function UserMenu() {
   // Only show photo if we have URL, no error, and it's loaded OR we haven't tried yet
   const shouldShowPhoto = optimizedPhotoURL && !imageError && (imageLoaded || !imageError)
 
-  console.log('🖼️ Photo Status:', {
-    originalURL: user?.photoURL,
-    optimizedURL: optimizedPhotoURL,
-    imageError,
-    imageLoaded,
-    shouldShowPhoto,
-  })
-
   const handleLogout = async () => {
     try {
       await logout()
@@ -80,13 +72,11 @@ export function UserMenu() {
   }
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    console.log('❌ Profile image failed to load:', optimizedPhotoURL)
     setImageError(true)
     setImageLoaded(false)
   }
 
   const handleImageLoad = () => {
-    console.log('✅ Profile image loaded successfully:', optimizedPhotoURL)
     setImageError(false)
     setImageLoaded(true)
   }

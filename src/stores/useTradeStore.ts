@@ -1,47 +1,128 @@
-// Update your /src/stores/useTradeStore.ts with proper authentication
+// stores/useTradeStore.ts - Fixed version with proper interface
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import { useAuth } from '@/app/contexts/AuthContext'
 
-// ... keep your existing interfaces ...
+// Interfaces
+interface Trade {
+  id: string
+  ticker: string
+  company: string
+  action: 'BUY' | 'SELL'
+  shares: number
+  pricePerShare: number
+  fee: number
+  totalCost: number
+  date: string
+  notes?: string
+  logo?: string
+  currency: string
+}
 
+interface Position {
+  id: string
+  ticker: string
+  company: string
+  logo?: string
+  totalShares: number
+  averagePrice: number
+  totalCost: number
+  currentPrice?: number
+  lastPriceUpdate?: string
+  currency: string
+  unrealizedPnL?: number
+  unrealizedPnLPercent?: number
+}
+
+interface PortfolioStats {
+  totalValue: number
+  totalCost: number
+  totalUnrealizedPnL: number
+  totalPositions: number
+}
+
+interface DashboardStats {
+  totalPnL: number
+  activePositions: number
+  totalValue: number
+  winRate: number
+  thisMonthPnL: number
+}
+
+interface Pagination {
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
+// Main store interface
 interface TradeStore {
-  // ... keep your existing state ...
+  // State
+  trades: Trade[]
+  positions: Position[]
+  portfolioStats: PortfolioStats | null
+  dashboardStats: DashboardStats | null
+  pagination: Pagination | null
   
-  // Updated methods with authentication
+  // Loading states
+  isLoading: boolean
+  isLoadingPositions: boolean
+  isLoadingDashboard: boolean
+  
+  // Error handling
+  error: string | null
+  
+  // Actions
   fetchTrades: (options?: { ticker?: string; limit?: number; offset?: number }) => Promise<void>
-  addTrade: (trade: any) => Promise<void>
-  updateTrade: (id: string, updates: any) => Promise<void>
+  addTrade: (trade: Omit<Trade, 'id'>) => Promise<void>
+  updateTrade: (id: string, updates: Partial<Trade>) => Promise<void>
   deleteTrade: (id: string) => Promise<void>
   fetchPositions: (updatePrices?: boolean) => Promise<void>
   updatePositionPrices: () => Promise<void>
   fetchDashboardData: () => Promise<void>
   
-  // ... keep your existing utility methods ...
+  // Utility methods
+  setError: (error: string | null) => void
+  clearError: () => void
+  reset: () => void
 }
 
 // Helper function to get authenticated headers
 const getAuthHeaders = () => {
   // Get the current user from your auth context
-  // This is a workaround since we can't use hooks in Zustand
-  const authContext = (window as any).__AUTH_CONTEXT__
+  // This is a simplified version - adjust based on your auth implementation
+  const authData = typeof window !== 'undefined' ? 
+    (window as any).__AUTH_CONTEXT__ || {} : {}
   
-  if (authContext?.dbUserId) {
-    return {
-      'Content-Type': 'application/json',
-      'x-user-id': authContext.dbUserId,
-    }
-  }
-  
-  return {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   }
+  
+  if (authData?.dbUserId) {
+    headers['x-user-id'] = authData.dbUserId
+  }
+  
+  return headers
 }
 
+// Initial state
+const initialState = {
+  trades: [],
+  positions: [],
+  portfolioStats: null,
+  dashboardStats: null,
+  pagination: null,
+  isLoading: false,
+  isLoadingPositions: false,
+  isLoadingDashboard: false,
+  error: null,
+}
+
+// Create the store
 export const useTradeStore = create<TradeStore>()(
   devtools(
     (set, get) => ({
-      // ... keep your existing initial state ...
+      ...initialState,
 
       // Fetch trades with user authentication
       fetchTrades: async (options = {}) => {
@@ -280,7 +361,7 @@ export const useTradeStore = create<TradeStore>()(
             dashboardStats: data.stats || null,
             isLoadingDashboard: false,
           })
-        } catch (error) {p
+        } catch (error) {
           console.error('❌ Error fetching dashboard data:', error)
           set({
             error: error instanceof Error ? error.message : 'Failed to fetch dashboard data',
@@ -289,13 +370,16 @@ export const useTradeStore = create<TradeStore>()(
         }
       },
 
-      // ... keep your existing utility methods ...
-      setError: (error) => set({ error }),
+      // Utility methods
+      setError: (error: string | null) => set({ error }),
       clearError: () => set({ error: null }),
       reset: () => set(initialState),
     }),
     {
-      name: 'trade-store',
+      name: 'trade-store', // devtools name
     }
   )
 )
+
+// Export types for use in components
+export type { Trade, Position, PortfolioStats, DashboardStats, TradeStore }

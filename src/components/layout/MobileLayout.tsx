@@ -18,7 +18,7 @@ export function MobileLayout({ children, title, subtitle, showBackButton = false
     <div className='min-h-screen theme-bg-gradient theme-text-primary transition-all duration-300'>
       <div className='max-w-md mx-auto'>
         {/* Header */}
-        <header className='p-4 pt-8 pb-6'>
+        <header className='p-2 pt-4 pb-4'>
           <div className='flex items-center justify-between'>
             <div className='flex items-center gap-3'>
               {showBackButton && (

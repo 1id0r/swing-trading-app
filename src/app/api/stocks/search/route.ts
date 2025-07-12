@@ -1,4 +1,4 @@
-// app/api/stocks/search/route.ts
+// app/api/stocks/search/route.ts - FIXED VERSION
 import { NextRequest, NextResponse } from 'next/server';
 
 const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY;
@@ -36,14 +36,45 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
     
-    // Filter and enhance results
+    // 🔧 FIXED FILTERING - Much more permissive!
     const filteredResults = data.result
-      ?.filter((stock: any) => 
-        stock.type === 'Common Stock' && 
-        stock.symbol.length <= 5 && 
-        !stock.symbol.includes('.')
-      )
-      .slice(0, 10) || [];
+      ?.filter((stock: any) => {
+        // Remove obvious junk symbols
+        if (!stock.symbol || !stock.description) return false;
+        
+        // Allow symbols up to 6 characters (for ETFs like IBIT, GBTC, etc.)
+        if (stock.symbol.length > 6) return false;
+        
+        // Skip penny stocks and warrants
+        if (stock.symbol.endsWith('W') || stock.symbol.endsWith('.W')) return false;
+        if (stock.description.toLowerCase().includes('warrant')) return false;
+        
+        // 🔓 ALLOW ALL TYPES - Remove type filtering entirely
+        // Users should see all available securities (stocks, ETFs, bonds, etc.)
+        // if (stock.type && !allowedTypes.includes(stock.type)) return false;
+        
+        // 🎯 Special handling for popular crypto ETFs
+        const cryptoETFs = ['IBIT', 'GBTC', 'ETHE', 'ARKB', 'FBTC', 'HODL'];
+        if (cryptoETFs.some(etf => stock.symbol.startsWith(etf))) return true;
+        
+        // Allow main exchange symbols (no dots) and popular dotted symbols
+        if (!stock.symbol.includes('.')) return true;
+        
+        // Allow some dotted symbols from major exchanges
+        const allowedDottedPatterns = [
+          /\.L$/,    // London Stock Exchange
+          /\.TO$/,   // Toronto Stock Exchange  
+          /\.PA$/,   // Paris
+          /\.DE$/,   // Germany
+          /\.NE$/,   // Other exchanges
+          /\.BC$/,   // Other exchanges
+        ];
+        
+        return allowedDottedPatterns.some(pattern => pattern.test(stock.symbol));
+      })
+      .slice(0, 15) || []; // ✅ Increased limit to 15
+
+    console.log(`🔍 Search "${query}": ${data.result?.length || 0} total → ${filteredResults.length} filtered`);
 
     return NextResponse.json({ results: filteredResults });
   } catch (error) {

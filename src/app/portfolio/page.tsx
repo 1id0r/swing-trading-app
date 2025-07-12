@@ -373,12 +373,12 @@ export default function PortfolioPage() {
 
   return (
     <MobileLayout title='Portfolio' subtitle={`${safePositions.length} active positions`}>
-      <div className='space-y-6'>
+      <div className='space-y-2'>
         {/* Tab Switcher */}
-        <div className='flex bg-gray-800 rounded-lg p-1'>
+        <div className='flex rounded-xl p-1'>
           <button
             onClick={() => setActiveTab('portfolio')}
-            className={`flex-1 px-4 py-2 rounded text-sm font-medium transition-colors ${
+            className={`flex-1 px-2 py-2 rounded text-sm font-medium transition-colors ${
               activeTab === 'portfolio' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -389,7 +389,7 @@ export default function PortfolioPage() {
           </button>
           <button
             onClick={() => setActiveTab('watchlist')}
-            className={`flex-1 px-4 py-2 rounded text-sm font-medium transition-colors ${
+            className={`flex-1 px-2 py-2 rounded text-sm font-medium transition-colors ${
               activeTab === 'watchlist' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'
             }`}
           >

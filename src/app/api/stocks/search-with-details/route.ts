@@ -1,47 +1,36 @@
+// app/api/stocks/search-with-details/route.ts - FIXED VERSION
 import { NextRequest, NextResponse } from 'next/server';
 
 const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY;
 const BASE_URL = 'https://finnhub.io/api/v1';
 
-// Exchange to currency mapping
+// Enhanced currency detection
 const EXCHANGE_CURRENCY_MAP: Record<string, string> = {
   'NASDAQ': 'USD', 'NYSE': 'USD', 'AMEX': 'USD', 'OTC': 'USD',
-  'LSE': 'GBP', 'AMS': 'EUR', 'PAR': 'EUR', 'BRU': 'EUR', 'LIS': 'EUR',
-  'FRA': 'EUR', 'SWX': 'CHF', 'TSE': 'JPY', 'OSE': 'JPY', 'HKEX': 'HKD',
-  'SSE': 'CNY', 'SZSE': 'CNY', 'KRX': 'KRW', 'BSE': 'INR', 'NSE': 'INR',
-  'SGX': 'SGD', 'ASX': 'AUD', 'TSX': 'CAD', 'BOVESPA': 'BRL', 'BMV': 'MXN',
-  'TASE': 'ILS'
+  'LSE': 'GBP', 'AMS': 'EUR', 'PAR': 'EUR', 'FRA': 'EUR',
+  'TSE': 'JPY', 'HKEX': 'HKD', 'SSE': 'CNY', 'ASX': 'AUD',
+  'TSX': 'CAD', 'BOVESPA': 'BRL', 'BMV': 'MXN', 'TASE': 'ILS',
 };
 
 const COUNTRY_CURRENCY_MAP: Record<string, string> = {
   'US': 'USD', 'United States': 'USD', 'GB': 'GBP', 'United Kingdom': 'GBP',
   'DE': 'EUR', 'Germany': 'EUR', 'FR': 'EUR', 'France': 'EUR',
-  'NL': 'EUR', 'Netherlands': 'EUR', 'CH': 'CHF', 'Switzerland': 'CHF',
   'JP': 'JPY', 'Japan': 'JPY', 'HK': 'HKD', 'Hong Kong': 'HKD',
-  'CN': 'CNY', 'China': 'CNY', 'KR': 'KRW', 'South Korea': 'KRW',
-  'IN': 'INR', 'India': 'INR', 'SG': 'SGD', 'Singapore': 'SGD',
-  'AU': 'AUD', 'Australia': 'AUD', 'CA': 'CAD', 'Canada': 'CAD',
-  'BR': 'BRL', 'Brazil': 'BRL', 'MX': 'MXN', 'Mexico': 'MXN',
-  'IL': 'ILS', 'Israel': 'ILS'
+  'CN': 'CNY', 'China': 'CNY', 'AU': 'AUD', 'Australia': 'AUD',
+  'CA': 'CAD', 'Canada': 'CAD', 'BR': 'BRL', 'Brazil': 'BRL',
+  'IL': 'ILS', 'Israel': 'ILS',
 };
 
 function detectCurrency(profile: any): string {
-  // First try: Use currency from profile if available and valid
   if (profile.currency && profile.currency.length === 3) {
     return profile.currency.toUpperCase();
   }
-
-  // Second try: Map from exchange
   if (profile.exchange && EXCHANGE_CURRENCY_MAP[profile.exchange.toUpperCase()]) {
     return EXCHANGE_CURRENCY_MAP[profile.exchange.toUpperCase()];
   }
-
-  // Third try: Map from country
   if (profile.country && COUNTRY_CURRENCY_MAP[profile.country]) {
     return COUNTRY_CURRENCY_MAP[profile.country];
   }
-
-  // Fallback: USD
   return 'USD';
 }
 
@@ -64,25 +53,49 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // First, search for symbols
-    const searchResponse = await fetch(
-      `${BASE_URL}/search?q=${encodeURIComponent(query)}&token=${FINNHUB_API_KEY}`
+    console.log(`🔍 Searching with details for: "${query}"`);
+    
+    const response = await fetch(
+      `${BASE_URL}/search?q=${encodeURIComponent(query)}&token=${FINNHUB_API_KEY}`,
+      {
+        next: { revalidate: 300 }
+      }
     );
 
-    if (!searchResponse.ok) {
-      throw new Error(`Search API error: ${searchResponse.status}`);
+    if (!response.ok) {
+      throw new Error(`Finnhub API error: ${response.status}`);
     }
 
-    const searchData = await searchResponse.json();
-    
-    // Filter results
-    const filteredResults = searchData.result
-      ?.filter((stock: any) => 
-        stock.type === 'Common Stock' && 
-        stock.symbol.length <= 5 && 
-        !stock.symbol.includes('.')
-      )
-      .slice(0, 5) || [];
+    const data = await response.json();
+    console.log(`📊 Finnhub returned ${data.result?.length || 0} results`);
+
+    // 🔧 SAME IMPROVED FILTERING as search route
+    const filteredResults = data.result
+      ?.filter((stock: any) => {
+        if (!stock.symbol || !stock.description) return false;
+        if (stock.symbol.length > 6) return false;
+        
+        // Skip penny stocks and warrants
+        if (stock.symbol.endsWith('W') || stock.symbol.endsWith('.W')) return false;
+        if (stock.description.toLowerCase().includes('warrant')) return false;
+        
+        // 🔓 ALLOW ALL TYPES - Remove type filtering entirely
+        // Users should see all available securities (stocks, ETFs, bonds, etc.)
+        // if (stock.type && !allowedTypes.includes(stock.type)) return false;
+        
+        // Special crypto ETFs
+        const cryptoETFs = ['IBIT', 'GBTC', 'ETHE', 'ARKB', 'FBTC', 'HODL'];
+        if (cryptoETFs.some(etf => stock.symbol.startsWith(etf))) return true;
+        
+        // Main symbols or allowed dotted patterns
+        if (!stock.symbol.includes('.')) return true;
+        
+        const allowedDottedPatterns = [/\.L$/, /\.TO$/, /\.PA$/, /\.DE$/, /\.NE$/, /\.BC$/];
+        return allowedDottedPatterns.some(pattern => pattern.test(stock.symbol));
+      })
+      .slice(0, 8) || []; // Get top 8 for detailed lookup
+
+    console.log(`✅ After filtering: ${filteredResults.length} symbols for detailed lookup`);
 
     // Get detailed data for each symbol
     const enrichedResults = await Promise.allSettled(
@@ -98,8 +111,8 @@ export async function GET(request: NextRequest) {
             profileResponse.ok ? profileResponse.json() : null
           ]);
 
-          if (quote && profile && quote.c > 0) {
-            // Detect currency based on exchange/country
+          // ✅ More lenient validation - don't require quote.c > 0
+          if (quote && profile) {
             const detectedCurrency = detectCurrency(profile);
             
             return {
@@ -116,18 +129,20 @@ export async function GET(request: NextRequest) {
           }
           return null;
         } catch (error) {
-          console.error(`Error enriching ${stock.symbol}:`, error);
+          console.error(`❌ Error enriching ${stock.symbol}:`, error);
           return null;
         }
       })
     );
 
-    // Filter out failed requests and null results
+    // Filter out failed requests
     const validResults = enrichedResults
       .filter((result): result is PromiseFulfilledResult<any> => 
         result.status === 'fulfilled' && result.value !== null
       )
       .map(result => result.value);
+
+    console.log(`🎯 Final results: ${validResults.length} enriched stocks`);
 
     return NextResponse.json({ results: validResults });
   } catch (error) {

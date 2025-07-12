@@ -62,7 +62,7 @@ model Trade {
   company      String   // Company name (Apple Inc.)
   logo         String?  // Company logo URL
   action       String   // "BUY" or "SELL"
-  shares       Int      // Number of shares
+  shares       Float     // Number of shares
   pricePerShare Float   // Price per share at time of trade
   fee          Float    @default(0) // Commission/trading fee
   currency     String   @default("USD")
@@ -101,7 +101,7 @@ model Position {
   currency      String   @default("USD")
   
   // Position data
-  totalShares   Int      // Current shares owned
+  totalShares   Float      // Current shares owned
   averagePrice  Float    // Average cost basis (FIFO)
   totalCost     Float    // Total amount invested
   

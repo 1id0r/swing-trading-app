@@ -1,4 +1,4 @@
-// Enhanced Portfolio Page with Staggered Loading and Fallback Data
+// Enhanced Portfolio Page with Market Hours - No API calls when market closed
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
@@ -7,8 +7,11 @@ import { MobileLayout } from '@/components/layout/MobileLayout'
 import { useTradeStore } from '@/stores/useTradeStore'
 import { useWatchlistStore } from '@/stores/useWatchlistStore'
 import { useRealtimePrices } from '@/hooks/useRealtimePrices'
+import { useMarketAwareData } from '@/hooks/useMarketAwareData'
 import { MarketHoursService, MarketStatus } from '@/lib/marketHours'
 import { StockSearch } from '@/components/watchlist/StockSearch'
+import { marketAwareApi } from '@/lib/marketAwareApi'
+
 import {
   TrendingUp,
   TrendingDown,
@@ -58,14 +61,15 @@ export default function PortfolioPage() {
 
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [marketStatus, setMarketStatus] = useState<MarketStatus | null>(null)
   const [activeTab, setActiveTab] = useState<'portfolio' | 'watchlist'>('portfolio')
   const [draggedItem, setDraggedItem] = useState<{ item: any; fromFolderId: string } | null>(null)
   const [showAddFolder, setShowAddFolder] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
   const [editingFolder, setEditingFolder] = useState<string | null>(null)
+  const [directPrices, setDirectPrices] = useState<Record<string, any>>({})
+  const [loadingDirectPrices, setLoadingDirectPrices] = useState(false)
 
-  // New state for fallback data
+  // State for fallback data (only used when market is open)
   const [fallbackData, setFallbackData] = useState<Record<string, any>>({})
   const [dataLoadingStates, setDataLoadingStates] = useState<Record<string, 'loading' | 'live' | 'fallback' | 'error'>>(
     {}
@@ -78,9 +82,19 @@ export default function PortfolioPage() {
     return [...new Set([...positionSymbols, ...watchlistSymbols])]
   }, [positions, getAllSymbols])
 
-  // Use real-time prices hook (only when market is open)
-  const shouldUseRealtime = marketStatus?.isOpen || false
-  const { prices, isConnected, isLoading: pricesLoading } = useRealtimePrices(shouldUseRealtime ? symbols : [])
+  // Market-aware data hook (respects market hours)
+  const {
+    data: marketData,
+    lastMarketPrices,
+    lastUpdate: marketLastUpdate,
+    isLive,
+    isLoading: pricesLoading,
+    marketStatus,
+    refresh,
+  } = useMarketAwareData(symbols)
+
+  // WebSocket prices (only when market is open)
+  const { prices, isConnected } = useRealtimePrices(marketStatus?.isOpen ? symbols : [])
 
   // Initialize loading states
   useEffect(() => {
@@ -91,9 +105,86 @@ export default function PortfolioPage() {
     setDataLoadingStates(newStates)
   }, [symbols])
 
-  // Fetch fallback data for symbols
+  const testMarketAwareApi = async () => {
+    console.log('🧪 Testing marketAwareApi directly...')
+    try {
+      const testSymbols = ['MSFT', 'NVDA', 'AAPL']
+      const result = await marketAwareApi.getBatchQuotes(testSymbols)
+      console.log('🧪 Direct API test result:', result)
+    } catch (error) {
+      console.error('🧪 Direct API test failed:', error)
+    }
+  }
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('lastMarketPrices')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        console.log('💾 localStorage lastMarketPrices:', parsed)
+      } else {
+        console.log('💾 No lastMarketPrices in localStorage')
+      }
+    } catch (error) {
+      console.log('💾 Error reading localStorage:', error)
+    }
+  }, [])
+
+  useEffect(() => {
+    console.log('🔍 Portfolio page - useMarketAwareData returned:', {
+      marketDataKeys: Object.keys(marketData),
+      lastMarketPricesKeys: Object.keys(lastMarketPrices || {}),
+      lastMarketPricesData: lastMarketPrices,
+      isLive,
+      marketStatus: marketStatus?.isOpen,
+      symbols,
+    })
+  }, [marketData, lastMarketPrices, isLive, marketStatus, symbols])
+
+  useEffect(() => {
+    const fetchDirectPrices = async () => {
+      if (symbols.length === 0) return
+
+      setLoadingDirectPrices(true)
+      try {
+        console.log('🔄 Fetching direct prices for:', symbols)
+
+        const response = await fetch('/api/stocks/batch-quotes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ symbols }),
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setDirectPrices(data.quotes)
+          console.log('✅ Direct prices fetched:', data.quotes)
+        }
+      } catch (error) {
+        console.error('❌ Failed to fetch direct prices:', error)
+      } finally {
+        setLoadingDirectPrices(false)
+      }
+    }
+
+    fetchDirectPrices()
+
+    // Refresh every 30 seconds if market is open
+    if (marketStatus?.isOpen) {
+      const interval = setInterval(fetchDirectPrices, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [symbols, marketStatus?.isOpen])
+
+  // Fetch fallback data for symbols (only when market is open)
   const fetchFallbackData = async (symbolsToFetch: string[]) => {
     if (symbolsToFetch.length === 0) return
+
+    // Don't fetch if market is closed
+    if (!marketStatus?.isOpen) {
+      console.log('🔒 Market closed - skipping fallback data fetch')
+      return
+    }
 
     try {
       console.log('📊 Fetching fallback data for:', symbolsToFetch)
@@ -145,11 +236,11 @@ export default function PortfolioPage() {
     }
   }
 
-  // Load fallback data immediately, then stagger for slow symbols
+  // Load fallback data immediately when market opens
   useEffect(() => {
-    if (symbols.length === 0) return
+    if (symbols.length === 0 || !marketStatus?.isOpen) return
 
-    // Immediately load fallback data for all symbols
+    // Immediately load fallback data for all symbols when market is open
     fetchFallbackData(symbols)
 
     // Set up staggered timeouts for symbols that might be slow
@@ -170,7 +261,7 @@ export default function PortfolioPage() {
     return () => {
       timeouts.forEach(clearTimeout)
     }
-  }, [symbols])
+  }, [symbols, marketStatus?.isOpen])
 
   // Update loading states based on live data
   useEffect(() => {
@@ -191,60 +282,96 @@ export default function PortfolioPage() {
     }
   }, [prices, dataLoadingStates])
 
-  // Get the best available data for a symbol
+  // DEBUG VERSION: Replace your getBestPriceData function with this temporarily to see what's happening
+
   const getBestPriceData = (symbol: string) => {
     const livePrice = prices[symbol]
+    const marketPrice = marketData[symbol] // This might be empty
+    const directPrice = directPrices[symbol] // ✅ NEW: Use direct API data
     const fallback = fallbackData[symbol]
-    const loadingState = dataLoadingStates[symbol]
 
-    // Prefer live data
+    console.log(`🔍 DEBUG - getBestPriceData for ${symbol}:`, {
+      livePrice,
+      marketPrice,
+      directPrice, // ✅ NEW: Check direct price
+      fallback,
+      marketStatus: marketStatus?.isOpen,
+      isLive,
+    })
+
+    // Prefer live WebSocket data (only available when market is open)
     if (livePrice && livePrice.isLive && livePrice.price > 0) {
+      console.log(`✅ ${symbol}: Using live price: $${livePrice.price}`)
       return {
         price: livePrice.price,
         change: livePrice.change,
         changePercent: livePrice.changePercent,
         isLive: true,
+        ageLabel: 'Live',
+        showAsStale: false,
         dataAge: 'live',
         timestamp: livePrice.timestamp,
       }
     }
 
-    // Fall back to static data
+    // Use market-aware data (respects market hours)
+    if (marketPrice && marketPrice.c > 0) {
+      console.log(`✅ ${symbol}: Using market data: $${marketPrice.c}`)
+      return {
+        price: marketPrice.c,
+        change: marketPrice.d || 0,
+        changePercent: marketPrice.dp || 0,
+        isLive: isLive,
+        ageLabel: isLive ? 'API Live' : 'Last Close',
+        showAsStale: !isLive,
+        dataAge: isLive ? 'recent' : 'closed',
+        timestamp: marketLastUpdate,
+      }
+    }
+
+    // ✅ NEW: Use direct API data (this should work!)
+    if (directPrice && directPrice.c > 0) {
+      console.log(`✅ ${symbol}: Using direct API price: $${directPrice.c}`)
+      return {
+        price: directPrice.c,
+        change: directPrice.d || 0,
+        changePercent: directPrice.dp || 0,
+        isLive: false,
+        ageLabel: marketStatus?.isOpen ? 'API Live' : 'Last Close',
+        showAsStale: false, // Don't show as stale since this is current data
+        dataAge: 'direct_api',
+        timestamp: Date.now(),
+      }
+    }
+
+    // Fallback to existing fallback data
     if (fallback && fallback.price > 0) {
+      console.log(`✅ ${symbol}: Using fallback data: $${fallback.price}`)
       return {
         price: fallback.price,
         change: fallback.change,
         changePercent: fallback.changePercent,
         isLive: false,
+        ageLabel: 'Cached',
+        showAsStale: true,
         dataAge: 'fallback',
         timestamp: fallback.timestamp,
       }
     }
 
     // No data available
+    console.log(`❌ ${symbol}: No data available`)
     return {
       price: 0,
       change: 0,
       changePercent: 0,
       isLive: false,
+      ageLabel: 'No Data',
+      showAsStale: true,
       dataAge: 'none',
       timestamp: 0,
     }
   }
-
-  // Update market status
-  useEffect(() => {
-    const updateMarketStatus = () => {
-      const status = MarketHoursService.getCurrentMarketStatus('US')
-      setMarketStatus(status)
-      console.log('📊 Market status updated:', status)
-    }
-
-    updateMarketStatus()
-    const interval = setInterval(updateMarketStatus, 60000)
-    return () => clearInterval(interval)
-  }, [])
-
   // Handle position click to navigate to stock detail
   const handlePositionClick = (position: Position) => {
     router.push(`/portfolio/${position.ticker}`)
@@ -284,8 +411,18 @@ export default function PortfolioPage() {
       setIsRefreshing(true)
       console.log('🔄 Manual refresh triggered')
 
-      // Refresh both live positions and fallback data
-      await Promise.all([fetchPositions(true), fetchFallbackData(symbols)])
+      if (marketStatus?.isOpen) {
+        // Market is open - refresh everything
+        await Promise.all([
+          refresh(), // Market-aware refresh
+          fetchPositions(true),
+          fetchFallbackData(symbols),
+        ])
+      } else {
+        // Market is closed - only refresh positions from database
+        console.log('🔒 Market closed - only refreshing database positions')
+        await fetchPositions(true)
+      }
 
       setLastUpdate(new Date())
     } catch (error) {
@@ -294,6 +431,9 @@ export default function PortfolioPage() {
       setIsRefreshing(false)
     }
   }
+
+  // Calculate live portfolio stats
+  // ✅ FIXED: Update your livePortfolioStats useMemo to include lastMarketPrices
 
   // Calculate live portfolio stats
   const livePortfolioStats = useMemo(() => {
@@ -315,6 +455,22 @@ export default function PortfolioPage() {
 
       totalCost += position.totalCost
       totalValue += position.totalShares * currentPrice
+
+      console.log(`💰 Portfolio calc for ${position.ticker}:`, {
+        shares: position.totalShares,
+        bestPrice: bestPrice.price,
+        currentPrice,
+        avgPrice: position.averagePrice,
+        cost: position.totalCost,
+        value: position.totalShares * currentPrice,
+      })
+    })
+
+    console.log(`💰 Total Portfolio Stats:`, {
+      totalValue,
+      totalCost,
+      totalUnrealizedPnL: totalValue - totalCost,
+      totalPositions: positions.length,
     })
 
     return {
@@ -323,7 +479,7 @@ export default function PortfolioPage() {
       totalUnrealizedPnL: totalValue - totalCost,
       totalPositions: positions.length,
     }
-  }, [positions, prices, fallbackData])
+  }, [positions, prices, marketData, directPrices, fallbackData])
 
   // Watchlist functions
   const handleAddFolder = () => {
@@ -426,18 +582,24 @@ export default function PortfolioPage() {
               ) : (
                 <>
                   <WifiOff className='w-3 h-3 text-yellow-500' />
-                  <span className='text-yellow-500'>Connecting...</span>
+                  <span className='text-yellow-500'>API Only</span>
                 </>
               )
             ) : (
               <>
                 <AlertCircle className='w-3 h-3 text-gray-500' />
-                <span className='text-gray-500'>Market Closed</span>
+                <span className='text-gray-500'>Market Closed - Last Prices</span>
               </>
             )}
           </div>
           <div className='flex items-center gap-2'>
-            {lastUpdate && <span>Last: {lastUpdate.toLocaleTimeString()}</span>}
+            {/* Show last update time */}
+            {marketLastUpdate > 0 && (
+              <span>
+                Last: {new Date(marketLastUpdate).toLocaleTimeString()}
+                {!marketStatus?.isOpen && ' (Close)'}
+              </span>
+            )}
             <button
               onClick={handleRefreshPrices}
               className='p-1 rounded text-xs bg-blue-500/20 hover:bg-blue-500/40 transition-colors'
@@ -477,6 +639,7 @@ export default function PortfolioPage() {
                     {marketStatus?.isOpen && isConnected && (
                       <div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>
                     )}
+                    {!marketStatus?.isOpen && <div className='w-2 h-2 bg-gray-500 rounded-full'></div>}
                     <button
                       onClick={handleRefreshPrices}
                       className='p-2 theme-text-secondary hover:theme-text-primary transition-colors'
@@ -517,7 +680,7 @@ export default function PortfolioPage() {
                 safePositions.map((position: Position) => {
                   const bestPrice = getBestPriceData(position.ticker)
                   const currentPrice = bestPrice.price || position.currentPrice || position.averagePrice
-                  const isLive = bestPrice.isLive
+                  const isLiveData = bestPrice.isLive
 
                   // Calculate live P&L
                   const currentValue = position.totalShares * currentPrice
@@ -550,8 +713,13 @@ export default function PortfolioPage() {
                           <div>
                             <div className='flex items-center gap-2'>
                               <div className='theme-text-primary font-medium'>{position.ticker}</div>
-                              {isLive && <div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>}
-                              {!isLive && bestPrice.dataAge === 'fallback' && (
+                              {isLiveData && marketStatus?.isOpen && (
+                                <div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>
+                              )}
+                              {!isLiveData && !marketStatus?.isOpen && (
+                                <div className='w-2 h-2 bg-gray-500 rounded-full'></div>
+                              )}
+                              {!isLiveData && marketStatus?.isOpen && bestPrice.dataAge === 'fallback' && (
                                 <div className='w-2 h-2 bg-blue-500 rounded-full'></div>
                               )}
                             </div>
@@ -592,7 +760,15 @@ export default function PortfolioPage() {
                         </div>
                         <div>
                           <div className='theme-text-secondary'>Current</div>
-                          <div className={`font-medium ${isLive ? 'text-green-400' : 'theme-text-primary'}`}>
+                          <div
+                            className={`font-medium ${
+                              isLiveData && marketStatus?.isOpen
+                                ? 'text-green-400'
+                                : bestPrice.showAsStale
+                                ? 'text-gray-400'
+                                : 'theme-text-primary'
+                            }`}
+                          >
                             ${currentPrice.toFixed(2)}
                           </div>
                         </div>
@@ -605,22 +781,19 @@ export default function PortfolioPage() {
 
                       {/* Show status based on data source */}
                       <div className='mt-1 text-xs text-center'>
-                        {isLive ? (
-                          <span className='text-green-400'>
-                            Live • {new Date(bestPrice.timestamp).toLocaleTimeString()}
-                          </span>
-                        ) : bestPrice.dataAge === 'fallback' ? (
-                          <span className='text-blue-400'>
-                            Static • {new Date(bestPrice.timestamp).toLocaleTimeString()}
-                          </span>
-                        ) : (
-                          <span className='theme-text-secondary'>
-                            Last:{' '}
-                            {position.lastPriceUpdate
-                              ? new Date(position.lastPriceUpdate).toLocaleTimeString()
-                              : 'Not updated'}
-                          </span>
-                        )}
+                        <span
+                          className={`${
+                            bestPrice.isLive
+                              ? 'text-green-400'
+                              : bestPrice.showAsStale
+                              ? 'text-gray-400'
+                              : 'text-blue-400'
+                          }`}
+                        >
+                          {bestPrice.ageLabel}
+                          {bestPrice.timestamp > 0 && ` • ${new Date(bestPrice.timestamp).toLocaleTimeString()}`}
+                          {!marketStatus?.isOpen && ' (Market Closed)'}
+                        </span>
                       </div>
                     </div>
                   )
@@ -770,7 +943,7 @@ export default function PortfolioPage() {
                             const bestPrice = getBestPriceData(item.ticker)
                             const loadingState = dataLoadingStates[item.ticker]
                             const currentPrice = bestPrice.price
-                            const isLive = bestPrice.isLive
+                            const isLiveData = bestPrice.isLive
                             const change = bestPrice.change
                             const changePercent = bestPrice.changePercent
 
@@ -794,7 +967,7 @@ export default function PortfolioPage() {
                                 }
                               }
 
-                              if (isLive) {
+                              if (isLiveData && marketStatus?.isOpen) {
                                 return {
                                   status: 'live',
                                   indicator: <div className='w-2 h-2 bg-green-400 rounded-full animate-pulse'></div>,
@@ -803,10 +976,21 @@ export default function PortfolioPage() {
                                 }
                               }
 
-                              if (loadingState === 'fallback') {
-                                const ageInMinutes = (Date.now() - bestPrice.timestamp) / 60000
+                              if (!marketStatus?.isOpen) {
                                 return {
-                                  status: 'fallback',
+                                  status: 'closed',
+                                  indicator: <div className='w-2 h-2 bg-gray-400 rounded-full'></div>,
+                                  statusText: 'Closed',
+                                  statusColor: 'text-gray-400',
+                                }
+                              }
+
+                              if (loadingState === 'fallback' || bestPrice.ageLabel === 'API Live') {
+                                const ageInMinutes = bestPrice.timestamp
+                                  ? (Date.now() - bestPrice.timestamp) / 60000
+                                  : 0
+                                return {
+                                  status: 'api',
                                   indicator: <div className='w-2 h-2 bg-blue-400 rounded-full'></div>,
                                   statusText: ageInMinutes < 5 ? 'Recent' : `${Math.floor(ageInMinutes)}m ago`,
                                   statusColor: 'text-blue-400',
@@ -871,12 +1055,19 @@ export default function PortfolioPage() {
                                   {/* Current Price */}
                                   <div className='col-span-3 watchlist-col-price'>
                                     {currentPrice > 0 ? (
-                                      <div
-                                        className={`font-medium text-sm ${
-                                          isLive ? 'text-green-400' : 'watchlist-text-primary'
-                                        }`}
-                                      >
-                                        ${currentPrice.toFixed(2)}
+                                      <div className='space-y-1'>
+                                        <div
+                                          className={`font-medium text-sm ${
+                                            isLiveData && marketStatus?.isOpen
+                                              ? 'text-green-400'
+                                              : bestPrice.showAsStale
+                                              ? 'text-gray-400'
+                                              : 'watchlist-text-primary'
+                                          }`}
+                                        >
+                                          ${currentPrice.toFixed(2)}
+                                        </div>
+                                        <div className='text-xs opacity-75'>{bestPrice.ageLabel}</div>
                                       </div>
                                     ) : (
                                       <div className='flex items-center gap-1 text-gray-400'>

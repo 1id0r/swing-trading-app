@@ -1,4 +1,4 @@
-// Debug version of AddTradeForm with extensive logging
+// Fixed version of AddTradeForm with proper TypeScript types
 'use client'
 
 import React, { useState } from 'react'
@@ -18,14 +18,14 @@ interface StockOption {
   changePercent?: number
 }
 
-// Updated Zod schema with proper validation
+// ✅ FIXED: Updated Zod schema with consistent fee type
 const tradeSchema = z.object({
   ticker: z.string().min(1, 'Ticker is required'),
   company: z.string().min(1, 'Company name is required'),
   action: z.enum(['BUY', 'SELL']),
   shares: z.number().min(0.0001, 'Shares must be at least 0.0001').max(1000000, 'Shares cannot exceed 1,000,000'),
   pricePerShare: z.number().min(0.01, 'Price must be greater than 0'),
-  fee: z.number().min(0, 'Fee cannot be negative').optional().default(0),
+  fee: z.number().min(0, 'Fee cannot be negative'), // ✅ FIXED: Remove .default() here
   date: z.string().min(1, 'Date is required'),
 })
 
@@ -47,20 +47,31 @@ export function AddTradeForm({ onSubmit, onCancel, defaultCommission = 9.99 }: A
     watch,
     setValue,
     trigger,
+    reset,
     formState: { errors, isValid, isSubmitting: formSubmitting },
   } = useForm<TradeFormData>({
-    resolver: zodResolver(tradeSchema),
+    resolver: zodResolver(tradeSchema), // ✅ FIXED: Types now match
     mode: 'onChange', // Enable real-time validation
     defaultValues: {
       action: 'BUY',
       date: new Date().toISOString().split('T')[0],
       fee: defaultCommission,
+      shares: 0, // ✅ FIXED: Add explicit defaults
+      pricePerShare: 0,
+      ticker: '',
+      company: '',
     },
   })
 
+  // ✅ FIXED: Update fee when defaultCommission prop changes
+  React.useEffect(() => {
+    console.log('🔧 AddTradeForm - defaultCommission changed to:', defaultCommission)
+    setValue('fee', defaultCommission, { shouldValidate: true })
+  }, [defaultCommission, setValue])
+
   const watchedValues = watch()
 
-  // Debug: Log form state
+  // ✅ Debug: Log form state including defaultCommission
   console.log('🔍 Form Debug:', {
     isValid,
     errors,
@@ -68,6 +79,7 @@ export function AddTradeForm({ onSubmit, onCancel, defaultCommission = 9.99 }: A
     watchedValues,
     formSubmitting,
     isSubmitting,
+    defaultCommission, // ✅ Add this to debug
   })
 
   // Safe calculations with fallbacks
@@ -91,7 +103,7 @@ export function AddTradeForm({ onSubmit, onCancel, defaultCommission = 9.99 }: A
     trigger(['ticker', 'company'])
   }
 
-  // Handle form submission with extensive debugging
+  // ✅ FIXED: Handle form submission with proper typing
   const onFormSubmit: SubmitHandler<TradeFormData> = async (data) => {
     console.log('🚀 Form submission started')
     console.log('📋 Form data:', data)
@@ -299,10 +311,10 @@ export function AddTradeForm({ onSubmit, onCancel, defaultCommission = 9.99 }: A
                     <input
                       {...register('fee', {
                         valueAsNumber: true,
-                        setValueAs: (value) => (value === '' ? 0 : Number(value)),
+                        setValueAs: (value) => (value === '' ? 0 : Number(value)), // ✅ FIXED: Default to 0
                       })}
                       type='number'
-                      placeholder='9.99'
+                      placeholder={defaultCommission.toString()} // ✅ FIXED: Use dynamic placeholder
                       step='0.01'
                       min='0'
                       className='theme-input w-full pl-12'

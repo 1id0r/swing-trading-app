@@ -1,6 +1,7 @@
-// stores/useSettingsStore.ts (Fixed - no auth headers required)
+// stores/useSettingsStore.ts - FIXED VERSION
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
+import { auth } from '@/lib/firebase';
 
 export type Theme = 'light' | 'dark' | 'oled';
 
@@ -44,6 +45,28 @@ interface SettingsActions {
 
 type SettingsStore = SettingsState & SettingsActions;
 
+// ✅ FIXED: Helper function to get Firebase ID token headers (same as useTradeStore)
+const getAuthHeaders = async (): Promise<Record<string, string>> => {
+  try {
+    const currentUser = auth.currentUser
+    
+    if (!currentUser) {
+      throw new Error('User not authenticated')
+    }
+
+    // Get the Firebase ID token
+    const idToken = await currentUser.getIdToken()
+    
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken}`, // ✅ This is what your API expects
+    }
+  } catch (error) {
+    console.error('❌ Error getting auth headers:', error)
+    throw new Error('Authentication failed')
+  }
+}
+
 const initialState: SettingsState = {
   settings: null,
   currencies: [],
@@ -57,18 +80,17 @@ export const useSettingsStore = create<SettingsStore>()(
       (set, get) => ({
         ...initialState,
 
-        // Fetch settings from API (simplified - no auth headers)
+        // ✅ FIXED: Fetch settings with Firebase authentication
         fetchSettings: async () => {
           set({ isLoading: true, error: null });
           
           try {
-            console.log('🚀 Fetching settings...');
+            console.log('🚀 Fetching settings with Firebase auth...');
             
+            const headers = await getAuthHeaders(); // ✅ Get Firebase token
             const response = await fetch('/api/settings', {
               method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-              },
+              headers,
             });
             
             if (!response.ok) {
@@ -97,18 +119,17 @@ export const useSettingsStore = create<SettingsStore>()(
           }
         },
 
-        // Update settings (simplified - no auth headers)
+        // ✅ FIXED: Update settings with Firebase authentication
         updateSettings: async (updates) => {
           set({ isLoading: true, error: null });
           
           try {
-            console.log('🚀 Updating settings:', updates);
+            console.log('🚀 Updating settings with Firebase auth:', updates);
             
+            const headers = await getAuthHeaders(); // ✅ Get Firebase token
             const response = await fetch('/api/settings', {
               method: 'PUT',
-              headers: { 
-                'Content-Type': 'application/json' 
-              },
+              headers,
               body: JSON.stringify(updates),
             });
 
@@ -139,7 +160,7 @@ export const useSettingsStore = create<SettingsStore>()(
           }
         },
 
-        // Fetch currencies (simplified - no auth headers)
+        // ✅ Fetch currencies (this doesn't need auth, so keep it as-is)
         fetchCurrencies: async () => {
           try {
             console.log('🚀 Fetching currencies...');
@@ -246,31 +267,23 @@ export const settingsUtils = {
   formatDate: (date: Date | string, format: string): string => {
     const d = typeof date === 'string' ? new Date(date) : date;
     
-    switch (format) {
-      case 'MM/dd/yyyy':
-        return d.toLocaleDateString('en-US');
-      case 'dd/MM/yyyy':
-        return d.toLocaleDateString('en-GB');
-      case 'yyyy-MM-dd':
-        return d.toISOString().split('T')[0];
-      default:
-        return d.toLocaleDateString();
+    try {
+      switch (format) {
+        case 'MM/dd/yyyy':
+          return d.toLocaleDateString('en-US');
+        case 'dd/MM/yyyy':
+          return d.toLocaleDateString('en-GB');
+        case 'yyyy-MM-dd':
+          return d.toISOString().split('T')[0];
+        default:
+          return d.toLocaleDateString();
+      }
+    } catch (error) {
+      return d.toString();
     }
   },
 
   calculateTax: (profit: number, taxRate: number): number => {
     return profit > 0 ? (profit * taxRate) / 100 : 0;
   },
-
-  getDefaultSettings: (): Partial<UserSettings> => ({
-    defaultCurrency: 'USD',
-    displayCurrency: 'USD',
-    taxRate: 25.0,
-    defaultFee: 9.99,
-    dateFormat: 'MM/dd/yyyy',
-    theme: 'dark',
-    notifyTrades: true,
-    notifyPriceAlerts: false,
-    notifyMonthly: true,
-  }),
 };

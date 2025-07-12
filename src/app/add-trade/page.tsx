@@ -1,16 +1,26 @@
-// app/add-trade/page.tsx (Updated for Database)
+// app/add-trade/page.tsx - FIXED VERSION (with settings integration)
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MobileLayout } from '@/components/layout/MobileLayout'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { AddTradeForm } from '@/components/trade/AddTradeForm'
 import { useTradeStore } from '@/stores/useTradeStore'
+import { useSettingsStore } from '@/stores/useSettingsStore' // ✅ Import settings store
 
-export default function AddTradePage() {
+function AddTradePageContent() {
   const router = useRouter()
   const { addTrade, isLoading } = useTradeStore()
+  const { settings, fetchSettings } = useSettingsStore() // ✅ Get settings
   const [error, setError] = useState<string | null>(null)
+
+  // ✅ Fetch settings on component mount
+  useEffect(() => {
+    if (!settings) {
+      fetchSettings()
+    }
+  }, [settings, fetchSettings])
 
   const handleSubmit = async (data: any) => {
     try {
@@ -29,6 +39,7 @@ export default function AddTradePage() {
         date: data.date,
       }
 
+      console.log('🚀 Adding trade with data:', tradeData)
       await addTrade(tradeData)
 
       // Show success and navigate back
@@ -42,6 +53,11 @@ export default function AddTradePage() {
   const handleCancel = () => {
     router.back()
   }
+
+  // ✅ Use defaultFee from settings, with fallback to 9.99
+  const defaultCommission = settings?.defaultFee ?? 9.99
+
+  console.log('🔧 Add Trade Page - Default commission from settings:', defaultCommission)
 
   return (
     <MobileLayout title='Add Trade' showBackButton onBackClick={handleCancel}>
@@ -60,8 +76,18 @@ export default function AddTradePage() {
           </div>
         )}
 
-        <AddTradeForm onSubmit={handleSubmit} onCancel={handleCancel} defaultCommission={9.99} />
+        {/* ✅ FIXED: Pass defaultCommission from settings */}
+        <AddTradeForm onSubmit={handleSubmit} onCancel={handleCancel} defaultCommission={defaultCommission} />
       </div>
     </MobileLayout>
+  )
+}
+
+// ✅ Wrap in ProtectedRoute
+export default function AddTradePage() {
+  return (
+    <ProtectedRoute>
+      <AddTradePageContent />
+    </ProtectedRoute>
   )
 }

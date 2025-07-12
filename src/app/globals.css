@@ -1047,16 +1047,6 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
-.dock-menu__item.active {
-  transform: translateY(-4px) scale(1.12);
-  /* Reduced movement */
-  background: rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(25px);
-  box-shadow:
-    0 15px 35px rgba(0, 0, 0, 0.2),
-    0 6px 16px rgba(59, 130, 246, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
 
 /* Active indicator - now a dot instead of line */
 .dock-menu__item.active::after {

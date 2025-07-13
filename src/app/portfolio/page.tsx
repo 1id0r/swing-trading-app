@@ -379,7 +379,7 @@ export default function PortfolioPage() {
 
   // Handle watchlist item click
   const handleWatchlistItemClick = (item: any) => {
-    router.push(`/portfolio/${item.ticker}`)
+    router.push(`/watchlist/${item.ticker}`)
   }
 
   useEffect(() => {

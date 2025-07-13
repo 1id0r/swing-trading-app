@@ -1,17 +1,18 @@
-// src/app/history/page.tsx
+// src/app/history/page.tsx - Updated with delete functionality
 'use client'
 
 import { useEffect } from 'react'
 import { MobileLayout } from '@/components/layout/MobileLayout'
 import { TradeCard } from '@/components/trade/TradeCard'
 import { useTradeStore } from '@/stores/useTradeStore'
-import { Search } from 'lucide-react' // Removed unused Filter import
+import { Search, Trash2 } from 'lucide-react'
 import { useState, useMemo } from 'react'
 
 export default function HistoryPage() {
-  const { trades, fetchTrades, isLoading, error } = useTradeStore()
+  const { trades, fetchTrades, deleteTrade, isLoading, error } = useTradeStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [filter, setFilter] = useState<'ALL' | 'BUY' | 'SELL'>('ALL')
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   // Fetch trades when component mounts
   useEffect(() => {
@@ -32,13 +33,45 @@ export default function HistoryPage() {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   }, [trades, searchTerm, filter])
 
+  const handleDeleteTrade = async (tradeId: string) => {
+    try {
+      setDeleteError(null)
+      await deleteTrade(tradeId)
+
+      // Show success message briefly
+      // You could implement a toast notification here instead
+      console.log('✅ Trade deleted successfully')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete trade'
+      setDeleteError(errorMessage)
+      console.error('❌ Failed to delete trade:', error)
+
+      // Clear error after 5 seconds
+      setTimeout(() => setDeleteError(null), 5000)
+    }
+  }
+
+  const handleEditTrade = (trade: any) => {
+    // TODO: Implement edit functionality
+    // This could navigate to an edit page or open a modal
+    console.log('Edit trade:', trade)
+    // For now, just log - you can implement this later
+  }
+
   return (
     <MobileLayout title='Trade History' subtitle={`${trades?.length || 0} total trades`}>
       <div className='space-y-4'>
-        {/* Error Message */}
+        {/* Error Messages */}
         {error && (
           <div className='bg-red-500/20 border border-red-500 rounded-lg p-3'>
             <p className='text-red-400 text-sm'>{error}</p>
+          </div>
+        )}
+
+        {deleteError && (
+          <div className='bg-red-500/20 border border-red-500 rounded-lg p-3 flex items-center gap-2'>
+            <Trash2 className='w-4 h-4 text-red-400' />
+            <p className='text-red-400 text-sm'>{deleteError}</p>
           </div>
         )}
 
@@ -97,8 +130,34 @@ export default function HistoryPage() {
                 </div>
               </div>
             ) : (
-              filteredTrades.map((trade) => <TradeCard key={trade.id} trade={trade} />)
+              filteredTrades.map((trade) => (
+                <TradeCard key={trade.id} trade={trade} onEdit={handleEditTrade} onDelete={handleDeleteTrade} />
+              ))
             )}
+          </div>
+        )}
+
+        {/* Summary Stats */}
+        {!isLoading && filteredTrades.length > 0 && (
+          <div className='theme-card p-4 mt-6'>
+            <h4 className='text-sm font-semibold theme-text-primary mb-3'>
+              {filter === 'ALL' ? 'All Trades' : `${filter} Trades`} Summary
+            </h4>
+            <div className='grid grid-cols-2 gap-4 text-sm'>
+              <div>
+                <span className='theme-text-secondary'>Total Trades:</span>
+                <span className='theme-text-primary font-medium ml-2'>{filteredTrades.length}</span>
+              </div>
+              <div>
+                <span className='theme-text-secondary'>Total Value:</span>
+                <span className='theme-text-primary font-medium ml-2'>
+                  $
+                  {filteredTrades
+                    .reduce((sum, trade) => sum + (trade.totalValue || trade.shares * trade.pricePerShare), 0)
+                    .toFixed(2)}
+                </span>
+              </div>
+            </div>
           </div>
         )}
       </div>

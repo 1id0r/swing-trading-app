@@ -1,8 +1,8 @@
-// Replace your /src/app/signup/page.tsx with this version
+// /src/app/auth/signup/page.tsx
 'use client'
 
 import { useState } from 'react'
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
+import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -16,57 +16,60 @@ export default function SignUpPage() {
     password: '',
     confirmPassword: '',
   })
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
   const router = useRouter()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }))
+    // Clear error when user starts typing
+    if (error) setError('')
+  }
+
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      setError('Name is required')
+      return false
+    }
+    if (!formData.email.trim()) {
+      setError('Email is required')
+      return false
+    }
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return false
+    }
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match')
+      return false
+    }
+    return true
   }
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (isLoading) return
-
-    setError('')
-
-    // Validation
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
-
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters')
-      return
-    }
-
-    setIsLoading(true)
+    if (!validateForm() || isLoading) return
 
     try {
-      console.log('🔐 Starting email sign-up...')
+      setIsLoading(true)
+      setError('')
+      console.log('📧 Creating account with email...')
 
-      // Create user with Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password)
       const user = userCredential.user
-
-      // Update user profile with display name
-      await updateProfile(user, {
-        displayName: formData.name,
-      })
 
       console.log('✅ Email sign-up successful:', {
         uid: user.uid,
         email: user.email,
-        name: formData.name,
       })
 
-      // Create user in your database
+      // Create user in database
       await createUserInDatabase(user, formData.name)
 
       // Redirect to dashboard
@@ -74,21 +77,15 @@ export default function SignUpPage() {
     } catch (error: any) {
       console.error('❌ Email sign-up failed:', error)
 
-      switch (error.code) {
-        case 'auth/email-already-in-use':
-          setError('An account with this email already exists')
-          break
-        case 'auth/invalid-email':
-          setError('Invalid email address')
-          break
-        case 'auth/weak-password':
-          setError('Password is too weak')
-          break
-        case 'auth/operation-not-allowed':
-          setError('Email/password accounts are not enabled')
-          break
-        default:
-          setError('Failed to create account. Please try again.')
+      // Handle specific Firebase errors
+      if (error.code === 'auth/email-already-in-use') {
+        setError('An account with this email already exists.')
+      } else if (error.code === 'auth/invalid-email') {
+        setError('Please enter a valid email address.')
+      } else if (error.code === 'auth/weak-password') {
+        setError('Password is too weak. Please choose a stronger password.')
+      } else {
+        setError('Failed to create account. Please try again.')
       }
     } finally {
       setIsLoading(false)
@@ -138,7 +135,7 @@ export default function SignUpPage() {
 
         {/* Sign-up Form */}
         <div className='theme-card p-8 space-y-6'>
-          {/* Google Sign-In */}
+          {/* Google Sign-In - Now with theme colors */}
           <GoogleSignInButton>Sign up with Google</GoogleSignInButton>
 
           {/* Divider */}
@@ -173,12 +170,7 @@ export default function SignUpPage() {
                 onChange={handleInputChange}
                 placeholder='Enter your full name'
                 required
-                className='
-                  w-full px-4 py-3 rounded-lg border border-gray-600 
-                  bg-gray-800 theme-text-primary placeholder-gray-400
-                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                  transition-colors
-                '
+                className='theme-input w-full'
               />
             </div>
 
@@ -193,14 +185,9 @@ export default function SignUpPage() {
                 name='email'
                 value={formData.email}
                 onChange={handleInputChange}
-                placeholder='your@email.com'
+                placeholder='Enter your email'
                 required
-                className='
-                  w-full px-4 py-3 rounded-lg border border-gray-600 
-                  bg-gray-800 theme-text-primary placeholder-gray-400
-                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                  transition-colors
-                '
+                className='theme-input w-full'
               />
             </div>
 
@@ -216,19 +203,14 @@ export default function SignUpPage() {
                   name='password'
                   value={formData.password}
                   onChange={handleInputChange}
-                  placeholder='Create a password (6+ characters)'
+                  placeholder='Create a password'
                   required
-                  className='
-                    w-full px-4 py-3 pr-12 rounded-lg border border-gray-600 
-                    bg-gray-800 theme-text-primary placeholder-gray-400
-                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                    transition-colors
-                  '
+                  className='theme-input w-full pr-12'
                 />
                 <button
                   type='button'
                   onClick={() => setShowPassword(!showPassword)}
-                  className='absolute right-3 top-1/2 transform -translate-y-1/2 theme-text-secondary hover:theme-text-primary'
+                  className='absolute right-4 top-1/2 transform -translate-y-1/2 theme-text-secondary hover:theme-text-primary transition-colors'
                 >
                   {showPassword ? <EyeOff className='w-5 h-5' /> : <Eye className='w-5 h-5' />}
                 </button>
@@ -249,75 +231,44 @@ export default function SignUpPage() {
                   onChange={handleInputChange}
                   placeholder='Confirm your password'
                   required
-                  className='
-                    w-full px-4 py-3 pr-12 rounded-lg border border-gray-600 
-                    bg-gray-800 theme-text-primary placeholder-gray-400
-                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                    transition-colors
-                  '
+                  className='theme-input w-full pr-12'
                 />
                 <button
                   type='button'
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className='absolute right-3 top-1/2 transform -translate-y-1/2 theme-text-secondary hover:theme-text-primary'
+                  className='absolute right-4 top-1/2 transform -translate-y-1/2 theme-text-secondary hover:theme-text-primary transition-colors'
                 >
                   {showConfirmPassword ? <EyeOff className='w-5 h-5' /> : <Eye className='w-5 h-5' />}
                 </button>
               </div>
             </div>
 
-            {/* Create Account Button */}
+            {/* Submit Button */}
             <button
               type='submit'
               disabled={isLoading}
-              className='
-                w-full theme-button-primary py-3 font-medium
-                disabled:opacity-50 disabled:cursor-not-allowed
-                flex items-center justify-center gap-2
-              '
+              className='theme-button-primary w-full disabled:opacity-50 disabled:cursor-not-allowed'
             >
               {isLoading ? (
-                <>
-                  <div className='w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin'></div>
-                  Creating Account
-                </>
+                <div className='flex items-center justify-center gap-2'>
+                  <div className='w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin'></div>
+                  Creating Account...
+                </div>
               ) : (
-                <>
-                  Create Account
-                  <span className='text-lg'>→</span>
-                </>
+                'Create Account'
               )}
             </button>
           </form>
 
-          {/* Terms */}
-          <div className='text-center'>
-            <p className='text-xs theme-text-secondary'>
-              By creating an account, you agree to our{' '}
-              <Link href='/terms' className='text-blue-400 hover:text-blue-300'>
-                Terms of Service
-              </Link>{' '}
-              and{' '}
-              <Link href='/privacy' className='text-blue-400 hover:text-blue-300'>
-                Privacy Policy
+          {/* Sign In Link */}
+          <div className='text-center pt-4 border-t border-gray-700'>
+            <p className='theme-text-secondary text-sm'>
+              Already have an account?{' '}
+              <Link href='/login' className='text-blue-400 hover:text-blue-300 font-medium transition-colors'>
+                Sign in here
               </Link>
             </p>
           </div>
-        </div>
-
-        {/* Sign In Link */}
-        <div className='text-center mt-6'>
-          <p className='theme-text-secondary'>
-            Already have an account?{' '}
-            <Link href='/login' className='text-blue-400 hover:text-blue-300 font-medium transition-colors'>
-              Sign in here
-            </Link>
-          </p>
-        </div>
-
-        {/* Footer */}
-        <div className='text-center mt-8'>
-          <p className='text-sm theme-text-secondary'>Secure trading platform with advanced portfolio management</p>
         </div>
       </div>
     </div>

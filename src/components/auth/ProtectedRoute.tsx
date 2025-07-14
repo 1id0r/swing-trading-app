@@ -1,9 +1,9 @@
-// components/auth/ProtectedRoute.tsx
 'use client'
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/contexts/AuthContext'
+import { AppLogo } from '@/components/ui/AppLogo'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -25,8 +25,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, redire
     return (
       <div className='min-h-screen theme-bg-gradient flex items-center justify-center'>
         <div className='theme-card p-8 text-center'>
-          <div className='futuristic-avatar mx-auto mb-4 !w-16 !h-16'>
-            <div className='w-8 h-8 border-3 border-blue-400/30 border-t-blue-400 rounded-full animate-spin'></div>
+          <div className='mx-auto mb-6 p-4 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-2xl border border-blue-500/20 w-fit'>
+            <AppLogo size={48} variant='white' />
           </div>
           <p className='theme-text-primary font-medium'>Loading your account...</p>
         </div>

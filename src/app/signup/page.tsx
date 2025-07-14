@@ -1,13 +1,14 @@
-// /src/app/auth/signup/page.tsx
+// /src/app/auth/signup/page.tsx - Updated with new logo
 'use client'
 
 import { useState } from 'react'
-import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Eye, EyeOff, TrendingUp } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton'
+import { AppLogo } from '@/components/ui/AppLogo'
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -124,10 +125,10 @@ export default function SignUpPage() {
   return (
     <div className='min-h-screen theme-bg-gradient flex items-center justify-center p-6'>
       <div className='w-full max-w-md'>
-        {/* Header */}
+        {/* Header with new logo */}
         <div className='text-center mb-8'>
-          <div className='futuristic-avatar mx-auto mb-4 !w-16 !h-16'>
-            <TrendingUp className='w-8 h-8' />
+          <div className='mx-auto mb-6 p-4 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-2xl border border-blue-500/20 w-fit'>
+            <AppLogo size={48} variant='white' />
           </div>
           <h1 className='text-3xl font-bold theme-text-primary mb-2'>Create Account</h1>
           <p className='theme-text-secondary'>Start your trading journey today</p>
@@ -264,7 +265,7 @@ export default function SignUpPage() {
           <div className='text-center pt-4 border-t border-gray-700'>
             <p className='theme-text-secondary text-sm'>
               Already have an account?{' '}
-              <Link href='/login' className='text-blue-400 hover:text-blue-300 font-medium transition-colors'>
+              <Link href='/auth/signin' className='text-blue-400 hover:text-blue-300 font-medium transition-colors'>
                 Sign in here
               </Link>
             </p>

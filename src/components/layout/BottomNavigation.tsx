@@ -1,11 +1,12 @@
-// components/layout/BottomNavigation.tsx
+// /src/components/layout/BottomNavigation.tsx - Updated with new logo
 'use client'
 
-import { TrendingUp, History, Plus, PieChart, Settings } from 'lucide-react'
+import { History, Plus, PieChart, Settings } from 'lucide-react'
 import { useRouter, usePathname } from 'next/navigation'
+import { AppLogo } from '@/components/ui/AppLogo'
 
 const navItems = [
-  { id: 'dashboard', icon: TrendingUp, label: 'Dashboard', href: '/dashboard' },
+  { id: 'dashboard', icon: AppLogo, label: 'Dashboard', href: '/dashboard', isLogo: true },
   { id: 'history', icon: History, label: 'History', href: '/history' },
   { id: 'add', icon: Plus, label: 'Add', href: '/add-trade' },
   { id: 'portfolio', icon: PieChart, label: 'Portfolio', href: '/portfolio' },
@@ -32,6 +33,7 @@ export function BottomNavigation() {
           {navItems.map((item) => {
             const isActive = pathname === item.href
             const isAddButton = item.id === 'add'
+            const isLogo = item.isLogo
 
             return (
               <button
@@ -42,10 +44,14 @@ export function BottomNavigation() {
                     ? 'text-blue-400 hover:text-blue-300'
                     : isActive
                     ? 'text-blue-400'
-                    : 'theme-text-secondary   hover:theme-text-primary  '
+                    : 'theme-text-secondary hover:theme-text-primary'
                 }`}
               >
-                <item.icon className={`w-5 h-5 ${isAddButton ? 'w-6 h-6' : ''}`} />
+                {isLogo ? (
+                  <AppLogo size={isAddButton ? 24 : 20} variant={isActive ? 'blue' : 'white'} />
+                ) : (
+                  <item.icon className={`w-5 h-5 ${isAddButton ? 'w-6 h-6' : ''}`} />
+                )}
                 <span className='text-xs font-medium'>{item.label}</span>
               </button>
             )

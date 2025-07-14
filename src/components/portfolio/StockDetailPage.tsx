@@ -1,11 +1,11 @@
-// Create this file: /src/components/portfolio/StockDetailPage.tsx
+// /src/components/portfolio/StockDetailPage.tsx
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, TrendingUp, TrendingDown, MoreHorizontal } from 'lucide-react'
 import { MobileLayout } from '@/components/layout/MobileLayout'
 
-// TradingView Chart Component
+// TradingView Chart Component with Volume & RSI
 interface TradingViewChartProps {
   symbol: string
   theme?: 'light' | 'dark'
@@ -36,6 +36,22 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol, theme = 'da
       allow_symbol_change: false,
       calendar: false,
       support_host: 'https://www.tradingview.com',
+      // Add technical indicators
+      studies: [
+        'Volume@tv-basicstudies', // Volume indicator
+        'RSI@tv-basicstudies', // RSI (Relative Strength Index)
+        'EMA@tv-basicstudies-15', // EMA 15
+        'EMA@tv-basicstudies-50', // EMA 50
+        'EMA@tv-basicstudies-100', // EMA 100
+        'EMA@tv-basicstudies-150', // EMA 150
+      ],
+      // Configure the layout to show volume at bottom
+      hide_side_toolbar: false,
+      hide_top_toolbar: false,
+      // Volume will appear at the bottom, RSI will be overlaid on price chart
+      show_popup_button: true,
+      popup_width: '1000',
+      popup_height: '650',
     })
 
     containerRef.current.appendChild(script)
@@ -100,6 +116,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({ position, onBa
   return (
     <MobileLayout title={position.ticker} subtitle={position.company} showBackButton={true} onBackClick={onBack}>
       <div className='min-h-screen bg-black text-white flex flex-col'>
+        {/* Portfolio Card */}
         <div className='pb-4'>
           <div className='theme-card p-4'>
             <div className='flex items-center justify-between mb-3'>
@@ -166,7 +183,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({ position, onBa
           </div>
         </div>
 
-        {/* TradingView Chart - Takes up remaining space */}
+        {/* TradingView Chart with Volume & RSI - Takes up remaining space */}
         <div className='flex-1 bg-gray-900 border-t border-gray-800'>
           <TradingViewChart symbol={position.ticker} theme='dark' />
         </div>

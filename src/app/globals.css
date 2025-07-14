@@ -2078,3 +2078,180 @@ body.oled .watchlist-search-container input,
 .watchlist-container .text-white {
   color: var(--text-primary) !important;
 }
+
+
+/* Add these styles to your globals.css - Settings Page Clean Styling */
+
+/* Settings Theme Selector - Clean No Border/Radius with Blue Active */
+.settings-theme-selector {
+  position: relative;
+  padding: 20px;
+  border: none !important;
+  border-radius: 0 !important;
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.settings-theme-selector::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg,
+      rgba(59, 130, 246, 0.1) 0%,
+      transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.settings-theme-selector:hover::before {
+  opacity: 1;
+}
+
+
+.settings-theme-selector.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  color: white !important;
+  border-radius: 8px !important;
+  box-shadow:
+    0 4px 16px rgba(59, 130, 246, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.settings-theme-selector.active .theme-text-primary {
+  color: white !important;
+}
+
+.settings-theme-selector.active::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+}
+
+/* Settings Form Elements - Clean No Border/Radius */
+.settings-select {
+  background-color: var(--bg-secondary);
+  border: none !important;
+  border-radius: 0 !important;
+  color: var(--text-primary);
+  padding: 14px 18px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  padding-right: 40px;
+  width: 100%;
+}
+
+.settings-select:focus {
+  background: rgba(59, 130, 246, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  outline: none;
+}
+
+.settings-select:hover {
+  background: rgba(59, 130, 246, 0.02);
+}
+
+/* Settings Input - Clean No Border/Radius */
+.settings-input {
+  background: var(--bg-secondary);
+  border: none !important;
+  border-radius: 0 !important;
+  color: var(--text-primary);
+  padding: 14px 18px;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+}
+
+.settings-input:focus {
+  background: rgba(59, 130, 246, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  outline: none;
+}
+
+.settings-input:hover {
+  background: rgba(59, 130, 246, 0.02);
+}
+
+/* UPDATED: Settings Input with Icon - Fixed alignment */
+.settings-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--bg-secondary);
+}
+
+.settings-input-group .settings-input {
+  padding-left: 45px;
+  background: transparent;
+  flex: 1;
+}
+
+.settings-input-group .settings-input-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--text-secondary);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* UPDATED: Improved input group focus states */
+.settings-input-group:focus-within {
+  background: rgba(59, 130, 246, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.settings-input-group:hover {
+  background: rgba(59, 130, 246, 0.02);
+}
+
+/* Theme Color Variants for Clean Styling */
+.light .settings-theme-selector {
+  background: #f1f5f9;
+}
+
+.light .settings-select,
+.light .settings-input,
+.light .settings-input-group {
+  background: #f1f5f9;
+}
+
+.light .settings-select:focus,
+.light .settings-input:focus,
+.light .settings-input-group:focus-within {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.oled .settings-theme-selector {
+  background: #111111;
+}
+
+.oled .settings-select,
+.oled .settings-input,
+.oled .settings-input-group {
+  background: #111111;
+}
+
+.oled .settings-select:focus,
+.oled .settings-input:focus,
+.oled .settings-input-group:focus-within {
+  background: rgba(59, 130, 246, 0.1);
+}

@@ -154,17 +154,17 @@ export function UserMenu() {
           {/* Menu */}
           <div
             className='
-            absolute right-0 mt-2 w-72 bg-gray-900/95 backdrop-blur-lg rounded-xl 
-            shadow-2xl border border-white/10 z-50 overflow-hidden
+            absolute right-0 mt-2 w-72 bg-black backdrop-blur-lg rounded-[20px]
+            shadow-2xl border border-white/30 z-50 overflow-hidden
           '
           >
             {/* User Info Header */}
-            <div className='px-4 py-4 border-b border-white/10 bg-gradient-to-r from-blue-600/20 to-purple-600/20'>
+            <div className='px-4 py-4 border-b border-white/10 bg-gradient-to-r from-blue-600/20 to-blue-600/20'>
               <div className='flex items-center gap-3'>
                 <AvatarImage size='w-12 h-12' className='ring-2 ring-white/20' />
 
                 {/* User Details */}
-                <div className='flex-1 min-w-0'>
+                <div className='flex-1  min-w-0'>
                   <p className='text-sm font-semibold text-white truncate'>{user?.displayName || 'User'}</p>
                   <p className='text-xs text-gray-300 truncate'>{user?.email}</p>
                   {/* Account Type Badge */}
@@ -178,11 +178,11 @@ export function UserMenu() {
             </div>
 
             {/* Menu Items */}
-            <div className='py-2'>
+            <div className='py-2 '>
               <button
                 onClick={handleProfileClick}
                 className='
-                  w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-200 
+                  w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-200  
                   hover:bg-white/10 transition-colors duration-200
                   group
                 '
@@ -219,7 +219,7 @@ export function UserMenu() {
             </div>
 
             {/* Footer */}
-            <div className='px-4 py-3 bg-gray-800/50 border-t border-white/10'>
+            <div className='px-4 py-2 border-t border-white'>
               <p className='text-xs text-gray-400 text-center'>Trading Platform v2.0</p>
             </div>
           </div>

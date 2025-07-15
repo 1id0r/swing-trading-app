@@ -5,6 +5,8 @@ import { auth } from '@/lib/firebase' // Add this import
 
 // Interfaces (keep all your existing interfaces)
 interface Trade {
+  netProfit: number
+  totalValue: number
   id: string
   ticker: string
   company: string

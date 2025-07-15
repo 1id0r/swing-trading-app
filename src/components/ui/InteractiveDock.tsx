@@ -100,7 +100,9 @@ export const InteractiveDock: React.FC<InteractiveDockProps> = ({ items, accentC
                 key={item.id}
                 className={`dock-menu__item ${isActive ? 'active' : ''}`}
                 onClick={() => handleItemClick(index, item.href)}
-                ref={(el) => (itemRefs.current[index] = el)}
+                ref={(el) => {
+                  itemRefs.current[index] = el
+                }}
                 style={{ '--lineWidth': '0px' } as React.CSSProperties}
                 data-add-trade={item.id === 'add' ? 'true' : undefined}
               >
@@ -109,7 +111,9 @@ export const InteractiveDock: React.FC<InteractiveDockProps> = ({ items, accentC
                 </div>
                 <strong
                   className={`dock-menu__text ${isActive ? 'active' : ''}`}
-                  ref={(el) => (textRefs.current[index] = el)}
+                  ref={(el) => {
+                    textRefs.current[index] = el
+                  }}
                 >
                   {item.label}
                 </strong>

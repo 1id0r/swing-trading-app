@@ -772,7 +772,7 @@ export default function PortfolioPage() {
                                 : 'theme-text-primary'
                             }`}
                           >
-                            ${(currentPrice || 0).toFixed(2)}
+                            ${toFixed(currentPrice, 2)}
                           </div>
                         </div>
                       </div>

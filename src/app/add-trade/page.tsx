@@ -37,6 +37,11 @@ function AddTradePageContent() {
         fee: data.fee || 0,
         currency: data.currency,
         date: data.date,
+
+        // ⬇️ add the missing required properties
+        totalCost: data.shares * data.pricePerShare + (data.fee || 0),
+        totalValue: data.shares * data.pricePerShare + (data.fee || 0),
+        netProfit: 0, // you can compute or leave 0 for now
       }
 
       console.log('🚀 Adding trade with data:', tradeData)

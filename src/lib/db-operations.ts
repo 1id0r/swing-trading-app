@@ -195,7 +195,7 @@ export const tradeOps = {
       'DELETE FROM trades WHERE id = $1 AND user_id = $2',
       [id, userId]
     )
-    return result.rowCount > 0
+    return (result.rowCount ?? 0) > 0
   },
 
   async getTradeById(id: string, userId: string): Promise<Trade | null> {

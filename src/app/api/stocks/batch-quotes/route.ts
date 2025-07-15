@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
         await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
         console.error(`❌ Failed to fetch quote for ${symbol}:`, error);
-        errors.push(`${symbol}: ${error.message}`);
+        errors.push(`${symbol}: ${(error as Error).message}`);
       }
     }
 
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('❌ Batch quotes error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch batch quotes', details: error.message },
+      { error: 'Failed to fetch batch quotes' },
       { status: 500 }
     );
   }

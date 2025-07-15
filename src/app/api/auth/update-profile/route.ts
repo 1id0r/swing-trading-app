@@ -17,9 +17,10 @@ export async function POST(request: NextRequest) {
     if (displayName !== undefined) updateData.displayName = displayName;
     if (photoURL !== undefined) updateData.photoURL = photoURL;
 
-    const user = await db.user.update({
+    const user = await db.user.upsert({
       where: { firebaseUid },
-      data: updateData,
+      update: updateData,
+      create: { firebaseUid, ...updateData },
     });
 
     return NextResponse.json({ user });

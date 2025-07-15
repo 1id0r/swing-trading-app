@@ -49,9 +49,18 @@ export async function GET(request: NextRequest) {
         if (stock.symbol.endsWith('W') || stock.symbol.endsWith('.W')) return false;
         if (stock.description.toLowerCase().includes('warrant')) return false;
         
-        // 🔓 ALLOW ALL TYPES - Remove type filtering entirely
-        // Users should see all available securities (stocks, ETFs, bonds, etc.)
-        // if (stock.type && !allowedTypes.includes(stock.type)) return false;
+        // Allow these types:
+        const allowedTypes = [
+          'Common Stock',
+          'ETF',
+          'ETP',  // ✅ IBIT is actually type "ETP" (Exchange Traded Product)!
+          'ETN',
+          'Mutual Fund',
+          'Index'
+        ];
+        
+        // If type is specified and not in allowed list, skip
+        if (stock.type && !allowedTypes.includes(stock.type)) return false;
         
         // 🎯 Special handling for popular crypto ETFs
         const cryptoETFs = ['IBIT', 'GBTC', 'ETHE', 'ARKB', 'FBTC', 'HODL'];

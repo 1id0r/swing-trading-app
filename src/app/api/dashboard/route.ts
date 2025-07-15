@@ -1,63 +1,31 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db, dbHelpers } from '@/lib/db';
-import { requireAuth } from '@/lib/auth'
+import { NextRequest, NextResponse } from 'next/server'
+import { adminAuth } from '@/lib/firebase-admin'
+import { dashboardOps, userOps } from '@/lib/db-operations'
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireAuth(request)
-    console.log('🔍 Fetching dashboard data for user:', user.id);
-
-    let stats = null;
-    try {
-      stats = await dbHelpers.getUserDashboardStats(user.id); // ✅ Use user.id consistently
-    } catch (error) {
-      console.log('Dashboard stats helper not available, calculating manually:', error);
-      
-      const positions = await db.position.findMany({
-        where: { userId: user.id }, // ✅ Use user.id consistently
-      });
-
-      const trades = await db.trade.findMany({
-        where: { userId: user.id }, // ✅ Use user.id consistently
-      });
-
-      const totalPositions = positions.length;
-      const totalValue = positions.reduce((sum, pos) => 
-        sum + (pos.currentPrice ? pos.totalShares * pos.currentPrice : pos.totalCost), 0);
-      const totalCost = positions.reduce((sum, pos) => sum + pos.totalCost, 0);
-      const totalUnrealizedPnL = totalValue - totalCost;
-
-      const totalRealizedPnL = trades
-        .filter(trade => trade.action === 'SELL')
-        .reduce((sum, trade) => sum + (trade.netProfit || 0), 0);
-
-      stats = {
-        totalPositions,
-        totalValue,
-        totalCost,
-        totalUnrealizedPnL,
-        totalUnrealizedPnLPercent: totalCost > 0 ? (totalUnrealizedPnL / totalCost) * 100 : 0,
-        totalRealizedPnL,
-        totalTrades: trades.length,
-      };
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    console.log(`✅ Dashboard data fetched for user ${user.id}:`, stats);
+    const token = authHeader.split('Bearer ')[1]
+    const decodedToken = await adminAuth.verifyIdToken(token)
+    
+    // Get user ID from database
+    const user = await userOps.getUserByFirebaseUid(decodedToken.uid)
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
 
-    return NextResponse.json({ stats });
+    const stats = await dashboardOps.getDashboardStats(user.id)
+
+    return NextResponse.json({ stats })
   } catch (error) {
-    console.error('❌ Error fetching dashboard data:', error);
-    
-    if (error instanceof Error && error.message === 'Unauthorized') { // ✅ Fixed error message
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-    
+    console.error('Error fetching dashboard stats:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch dashboard data' },
+      { error: 'Failed to fetch dashboard stats' },
       { status: 500 }
-    );
+    )
   }
 }

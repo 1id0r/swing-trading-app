@@ -1,11 +1,27 @@
-// /src/components/portfolio/StockDetailPage.tsx
+// Fixed StockDetailPage Component - Handle null values from PostgreSQL
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, TrendingUp, TrendingDown, MoreHorizontal } from 'lucide-react'
 import { MobileLayout } from '@/components/layout/MobileLayout'
 
-// TradingView Chart Component with Volume & RSI
+// Helper function to safely handle price formatting
+const safeToFixed = (value: number | null | undefined, decimals: number = 2): string => {
+  if (value === null || value === undefined || isNaN(value)) {
+    return '0.00'
+  }
+  return Number(value).toFixed(decimals)
+}
+
+// Helper function to safely get numeric values
+const safeNumber = (value: number | null | undefined, fallback: number = 0): number => {
+  if (value === null || value === undefined || isNaN(value)) {
+    return fallback
+  }
+  return Number(value)
+}
+
+// TradingView Chart Component
 interface TradingViewChartProps {
   symbol: string
   theme?: 'light' | 'dark'
@@ -36,22 +52,6 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol, theme = 'da
       allow_symbol_change: false,
       calendar: false,
       support_host: 'https://www.tradingview.com',
-      // Add technical indicators
-      studies: [
-        'Volume@tv-basicstudies', // Volume indicator
-        'RSI@tv-basicstudies', // RSI (Relative Strength Index)
-        'EMA@tv-basicstudies-15', // EMA 15
-        'EMA@tv-basicstudies-50', // EMA 50
-        'EMA@tv-basicstudies-100', // EMA 100
-        'EMA@tv-basicstudies-150', // EMA 150
-      ],
-      // Configure the layout to show volume at bottom
-      hide_side_toolbar: false,
-      hide_top_toolbar: false,
-      // Volume will appear at the bottom, RSI will be overlaid on price chart
-      show_popup_button: true,
-      popup_width: '1000',
-      popup_height: '650',
     })
 
     containerRef.current.appendChild(script)
@@ -79,31 +79,37 @@ interface StockDetailPageProps {
     company: string
     logo?: string
     totalShares: number
-    averagePrice: number
+    averagePrice: number | null // Allow null from PostgreSQL
     totalCost: number
-    currentPrice?: number
+    currentPrice?: number | null
     lastPriceUpdate?: string
   }
   onBack: () => void
 }
 
 export const StockDetailPage: React.FC<StockDetailPageProps> = ({ position, onBack }) => {
-  const [currentPrice, setCurrentPrice] = useState(position.currentPrice || position.averagePrice)
+  const safeAvgPrice = safeNumber(position.averagePrice)
+  const safeCurrPrice = safeNumber(position.currentPrice) || safeAvgPrice
+
+  const [currentPrice, setCurrentPrice] = useState(safeCurrPrice)
   const [priceChange, setPriceChange] = useState(0)
   const [priceChangePercent, setPriceChangePercent] = useState(0)
 
-  // Calculate P&L
-  const currentValue = position.totalShares * currentPrice
-  const unrealizedPnL = currentValue - position.totalCost
-  const unrealizedPnLPercent = position.totalCost > 0 ? (unrealizedPnL / position.totalCost) * 100 : 0
+  // Calculate P&L with safe values
+  const positionShares = safeNumber(position.totalShares)
+  const positionCost = safeNumber(position.totalCost)
+
+  const currentValue = positionShares * currentPrice
+  const unrealizedPnL = currentValue - positionCost
+  const unrealizedPnLPercent = positionCost > 0 ? (unrealizedPnL / positionCost) * 100 : 0
 
   // Mock real-time price updates (replace with actual WebSocket or API calls)
   useEffect(() => {
     const interval = setInterval(() => {
       const mockChange = (Math.random() - 0.5) * 2 // Random change between -1 and 1
       const newPrice = Math.max(0.01, currentPrice + mockChange) // Ensure price doesn't go negative
-      const change = newPrice - position.averagePrice
-      const changePercent = position.averagePrice > 0 ? (change / position.averagePrice) * 100 : 0
+      const change = newPrice - safeAvgPrice
+      const changePercent = safeAvgPrice > 0 ? (change / safeAvgPrice) * 100 : 0
 
       setCurrentPrice(newPrice)
       setPriceChange(change)
@@ -111,12 +117,11 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({ position, onBa
     }, 3000)
 
     return () => clearInterval(interval)
-  }, [currentPrice, position.averagePrice])
+  }, [currentPrice, safeAvgPrice])
 
   return (
     <MobileLayout title={position.ticker} subtitle={position.company} showBackButton={true} onBackClick={onBack}>
       <div className='min-h-screen bg-black text-white flex flex-col'>
-        {/* Portfolio Card */}
         <div className='pb-4'>
           <div className='theme-card p-4'>
             <div className='flex items-center justify-between mb-3'>
@@ -149,7 +154,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({ position, onBa
                 <div className={`flex items-center gap-1 ${unrealizedPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   {unrealizedPnL >= 0 ? <TrendingUp className='w-4 h-4' /> : <TrendingDown className='w-4 h-4' />}
                   <span className='font-medium'>
-                    {unrealizedPnL >= 0 ? '+' : ''}${Math.abs(unrealizedPnL).toFixed(2)}
+                    {unrealizedPnL >= 0 ? '+' : ''}${safeToFixed(Math.abs(unrealizedPnL))}
                   </span>
                 </div>
                 <div className={`text-xs ${unrealizedPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -162,28 +167,28 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({ position, onBa
             <div className='grid grid-cols-3 gap-4 text-sm'>
               <div>
                 <div className='theme-text-secondary'>Shares</div>
-                <div className='theme-text-primary font-medium'>{position.totalShares.toLocaleString()}</div>
+                <div className='theme-text-primary font-medium'>{positionShares.toLocaleString()}</div>
               </div>
               <div>
                 <div className='theme-text-secondary'>Avg Price</div>
-                <div className='theme-text-primary font-medium'>${position.averagePrice.toFixed(2)}</div>
+                <div className='theme-text-primary font-medium'>${safeToFixed(safeAvgPrice)}</div>
               </div>
               <div>
                 <div className='theme-text-secondary'>Current</div>
-                <div className='theme-text-primary font-medium'>${currentPrice.toFixed(2)}</div>
+                <div className='theme-text-primary font-medium'>${safeToFixed(currentPrice)}</div>
               </div>
             </div>
 
             <div className='mt-3 pt-3 border-t border-gray-700 flex justify-between text-xs theme-text-secondary'>
-              <span>Cost: ${position.totalCost.toFixed(2)}</span>
-              <span>Value: ${currentValue.toFixed(2)}</span>
+              <span>Cost: ${safeToFixed(positionCost)}</span>
+              <span>Value: ${safeToFixed(currentValue)}</span>
             </div>
 
             <div className='mt-1 text-xs text-green-400 text-center'>Live • {new Date().toLocaleTimeString()}</div>
           </div>
         </div>
 
-        {/* TradingView Chart with Volume & RSI - Takes up remaining space */}
+        {/* TradingView Chart - Takes up remaining space */}
         <div className='flex-1 bg-gray-900 border-t border-gray-800'>
           <TradingViewChart symbol={position.ticker} theme='dark' />
         </div>

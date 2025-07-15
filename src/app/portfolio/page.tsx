@@ -115,7 +115,12 @@ export default function PortfolioPage() {
       console.error('🧪 Direct API test failed:', error)
     }
   }
-
+  const safeToFixed = (value: number | null | undefined, decimals: number = 2): string => {
+    if (value === null || value === undefined || isNaN(value)) {
+      return '0.00'
+    }
+    return Number(value).toFixed(decimals)
+  }
   useEffect(() => {
     try {
       const stored = localStorage.getItem('lastMarketPrices')
@@ -756,7 +761,7 @@ export default function PortfolioPage() {
                         </div>
                         <div>
                           <div className='theme-text-secondary'>Avg Price</div>
-                          <div className='theme-text-primary font-medium'>${position.averagePrice.toFixed(2)}</div>
+                          <div className='theme-text-primary font-medium'>${safeToFixed(position.averagePrice)}</div>
                         </div>
                         <div>
                           <div className='theme-text-secondary'>Current</div>

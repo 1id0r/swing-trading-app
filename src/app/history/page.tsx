@@ -7,8 +7,11 @@ import { TradeCard } from '@/components/trade/TradeCard'
 import { useTradeStore } from '@/stores/useTradeStore'
 import { Search, Trash2 } from 'lucide-react'
 import { useState, useMemo } from 'react'
+import { useAuth } from '@/app/contexts/AuthContext'
+import { toFixed } from '@/lib/format'
 
 export default function HistoryPage() {
+  const { user } = useAuth()
   const { trades, fetchTrades, deleteTrade, isLoading, error } = useTradeStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [filter, setFilter] = useState<'ALL' | 'BUY' | 'SELL'>('ALL')
@@ -16,8 +19,9 @@ export default function HistoryPage() {
 
   // Fetch trades when component mounts
   useEffect(() => {
+    if (!user) return // ⬅️ guard
     fetchTrades()
-  }, [fetchTrades])
+  }, [fetchTrades, user])
 
   const filteredTrades = useMemo(() => {
     if (!trades || trades.length === 0) return []
@@ -32,6 +36,12 @@ export default function HistoryPage() {
       })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   }, [trades, searchTerm, filter])
+
+  // right after filteredTrades
+  const totalValue = useMemo(
+    () => filteredTrades.reduce((sum, t) => sum + (t.totalValue ?? t.shares * t.pricePerShare), 0),
+    [filteredTrades]
+  )
 
   const handleDeleteTrade = async (tradeId: string) => {
     try {
@@ -150,12 +160,7 @@ export default function HistoryPage() {
               </div>
               <div>
                 <span className='theme-text-secondary'>Total Value:</span>
-                <span className='theme-text-primary font-medium ml-2'>
-                  $
-                  {filteredTrades
-                    .reduce((sum, trade) => sum + (trade.totalValue || trade.shares * trade.pricePerShare), 0)
-                    .toFixed(2)}
-                </span>
+                <span className='theme-text-primary font-medium ml-2'>${toFixed(totalValue)}</span>
               </div>
             </div>
           </div>

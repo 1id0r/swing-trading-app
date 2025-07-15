@@ -68,31 +68,32 @@ export function GoogleSignInButton({ className = '', children }: GoogleSignInBut
     try {
       console.log('👤 Creating user in database...')
 
-      const response = await fetch('/api/auth/create-user', {
+      // Get Firebase ID token (NEW - this is what was missing!)
+      const idToken = await user.getIdToken()
+      console.log('🔑 Got Firebase ID token')
+
+      // Use the correct endpoint with Bearer token
+      const response = await fetch('/api/auth/user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`, // NEW - Bearer token auth
         },
-        body: JSON.stringify({
-          firebaseUid: user.uid,
-          email: user.email,
-          displayName: user.displayName || user.email?.split('@')[0] || 'User',
-          photoURL: user.photoURL,
-        }),
       })
 
       if (!response.ok) {
-        throw new Error(`Failed to create user: ${response.status}`)
+        const errorText = await response.text()
+        throw new Error(`Failed to create user: ${response.status} - ${errorText}`)
       }
 
       const userData = await response.json()
       console.log('✅ User created in database:', userData)
+      return userData
     } catch (error) {
       console.error('❌ Failed to create user in database:', error)
       // Don't throw here - user is still authenticated with Firebase
     }
   }
-
   return (
     <button
       onClick={handleGoogleSignIn}

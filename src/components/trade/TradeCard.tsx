@@ -1,5 +1,6 @@
 // components/trade/TradeCard.tsx - Updated with delete functionality
 'use client'
+import { toFixed } from '@/lib/format'
 import { ArrowUpRight, ArrowDownRight, MoreHorizontal, Edit, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -126,15 +127,15 @@ export function TradeCard({ trade, onEdit, onDelete }: TradeCardProps) {
         <div className='grid grid-cols-4 gap-3 text-sm'>
           <div>
             <div className='theme-text-secondary'>Shares</div>
-            <div className='theme-text-primary font-medium'>{trade.shares.toLocaleString()}</div>
+            <div className='theme-text-primary font-medium'>${toFixed(trade.shares)}</div>
           </div>
           <div>
             <div className='theme-text-secondary'>Price</div>
-            <div className='theme-text-primary font-medium'>${trade.pricePerShare.toFixed(2)}</div>
+            <div className='theme-text-primary font-medium'>${toFixed(trade.pricePerShare)}</div>
           </div>
           <div>
             <div className='theme-text-secondary'>Total</div>
-            <div className='theme-text-primary font-medium'>${totalValue.toFixed(2)}</div>
+            <div className='theme-text-primary font-medium'>{Number(totalValue ?? 0).toFixed(2)}</div>
           </div>
           <div>
             <div className='theme-text-secondary'>P&L</div>
@@ -158,7 +159,7 @@ export function TradeCard({ trade, onEdit, onDelete }: TradeCardProps) {
 
         <div className='mt-3 pt-2 border-t border-gray-700'>
           <div className='text-xs theme-text-secondary'>
-            {formatDate(trade.date)} • Fee: ${trade.fee.toFixed(2)}
+            {formatDate(trade.date)} • Fee: ${toFixed(trade.fee)}
           </div>
         </div>
 

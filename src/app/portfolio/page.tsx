@@ -11,6 +11,7 @@ import { useMarketAwareData } from '@/hooks/useMarketAwareData'
 import { MarketHoursService, MarketStatus } from '@/lib/marketHours'
 import { StockSearch } from '@/components/watchlist/StockSearch'
 import { marketAwareApi } from '@/lib/marketAwareApi'
+import { useAuth } from '@/app/contexts/AuthContext'
 
 import {
   TrendingUp,
@@ -31,6 +32,7 @@ import {
   BarChart3,
   Loader2,
 } from 'lucide-react'
+import { toFixed } from '@/lib/format'
 
 interface Position {
   id: string
@@ -68,6 +70,7 @@ export default function PortfolioPage() {
   const [editingFolder, setEditingFolder] = useState<string | null>(null)
   const [directPrices, setDirectPrices] = useState<Record<string, any>>({})
   const [loadingDirectPrices, setLoadingDirectPrices] = useState(false)
+  const { user } = useAuth()
 
   // State for fallback data (only used when market is open)
   const [fallbackData, setFallbackData] = useState<Record<string, any>>({})
@@ -388,27 +391,20 @@ export default function PortfolioPage() {
   }
 
   useEffect(() => {
-    // Load initial positions
-    fetchPositions(true).then(() => {
-      setLastUpdate(new Date())
-    })
-  }, [fetchPositions])
-
-  // Update database periodically with WebSocket prices (only when market is open)
+    if (!user) return // ⬅️ wait until Firebase user is ready
+    fetchPositions(true).then(() => setLastUpdate(new Date()))
+  }, [user, fetchPositions])
   useEffect(() => {
+    if (!user) return // ⬅️ same guard
     if (!marketStatus?.isOpen) return
 
     const interval = setInterval(async () => {
-      if (Object.keys(prices).length > 0) {
-        console.log('💾 Syncing WebSocket prices to database...')
-        await fetchPositions(true)
-        setLastUpdate(new Date())
-      }
-    }, 300000) // 5 minutes
+      await fetchPositions(true)
+      setLastUpdate(new Date())
+    }, 300000)
 
     return () => clearInterval(interval)
-  }, [prices, fetchPositions, marketStatus?.isOpen])
-
+  }, [user, marketStatus?.isOpen, fetchPositions])
   const handleRefreshPrices = async () => {
     if (isRefreshing) return
 
@@ -757,7 +753,9 @@ export default function PortfolioPage() {
                       <div className='grid grid-cols-3 gap-4 text-sm'>
                         <div>
                           <div className='theme-text-secondary'>Shares</div>
-                          <div className='theme-text-primary font-medium'>{position.totalShares.toLocaleString()}</div>
+                          <div className='theme-text-primary font-medium'>
+                            {Number(position.totalShares).toFixed(2)}
+                          </div>
                         </div>
                         <div>
                           <div className='theme-text-secondary'>Avg Price</div>
@@ -774,14 +772,14 @@ export default function PortfolioPage() {
                                 : 'theme-text-primary'
                             }`}
                           >
-                            ${currentPrice.toFixed(2)}
+                            ${(currentPrice || 0).toFixed(2)}
                           </div>
                         </div>
                       </div>
 
                       <div className='mt-3 pt-3 border-t border-gray-700 flex justify-between text-xs theme-text-secondary'>
-                        <span>Cost: ${position.totalCost.toFixed(2)}</span>
-                        <span>Value: ${currentValue.toFixed(2)}</span>
+                        <span> Cost: ${Number(position.totalCost ?? 0).toFixed(2)}</span>
+                        <span>Value: ${(currentValue || 0).toFixed(2)}</span>
                       </div>
 
                       {/* Show status based on data source */}
@@ -1070,7 +1068,7 @@ export default function PortfolioPage() {
                                               : 'watchlist-text-primary'
                                           }`}
                                         >
-                                          ${currentPrice.toFixed(2)}
+                                          ${toFixed(currentPrice, 2)}
                                         </div>
                                         <div className='text-xs opacity-75'>{bestPrice.ageLabel}</div>
                                       </div>

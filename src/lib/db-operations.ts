@@ -60,6 +60,28 @@ export interface UserSettings {
   updatedAt: Date
 }
 
+export interface WatchlistFolder {
+  id: string
+  userId: string
+  name: string
+  isExpanded: boolean
+  position: number
+  createdAt: Date
+  updatedAt: Date
+  items?: WatchlistItem[]
+}
+
+export interface WatchlistItem {
+  id: string
+  folderId: string
+  userId: string
+  ticker: string
+  company?: string
+  logo?: string
+  addedDate: Date
+  position: number
+}
+
 // Helper function to convert snake_case to camelCase
 function toCamelCase(obj: any): any {
   if (obj === null || obj === undefined || typeof obj !== 'object') return obj
@@ -515,5 +537,309 @@ export const fifoOps = {
     }
 
     return totalCostBasis
+  }
+}
+
+
+// Watchlist Operations
+export const watchlistOps = {
+  // Get all folders for a user with their items
+  async getUserWatchlistFolders(userId: string): Promise<WatchlistFolder[]> {
+    const client = await pool.connect()
+    try {
+      // Get folders
+      const foldersResult = await client.query(
+        `SELECT * FROM watchlist_folders 
+         WHERE user_id = $1 
+         ORDER BY position ASC, created_at ASC`,
+        [userId]
+      )
+
+      // Get all items for this user
+      const itemsResult = await client.query(
+        `SELECT * FROM watchlist_items 
+         WHERE user_id = $1 
+         ORDER BY position ASC, added_date ASC`,
+        [userId]
+      )
+
+      const folders = foldersResult.rows.map(toCamelCase)
+      const items = itemsResult.rows.map(toCamelCase)
+
+      // Group items by folder
+      return folders.map(folder => ({
+        ...folder,
+        items: items.filter(item => item.folderId === folder.id)
+      }))
+    } finally {
+      client.release()
+    }
+  },
+
+  // Create a new folder
+  async createFolder(userId: string, name: string): Promise<WatchlistFolder> {
+    const client = await pool.connect()
+    try {
+      const id = nanoid()
+      
+      // Get the next position
+      const positionResult = await client.query(
+        'SELECT COALESCE(MAX(position), -1) + 1 as next_position FROM watchlist_folders WHERE user_id = $1',
+        [userId]
+      )
+      const position = positionResult.rows[0].next_position
+
+      const result = await client.query(
+        `INSERT INTO watchlist_folders (id, user_id, name, position)
+         VALUES ($1, $2, $3, $4)
+         RETURNING *`,
+        [id, userId, name, position]
+      )
+
+      return toCamelCase(result.rows[0])
+    } finally {
+      client.release()
+    }
+  },
+
+  // Delete a folder and all its items
+  async deleteFolder(userId: string, folderId: string): Promise<void> {
+    const client = await pool.connect()
+    try {
+      await client.query('BEGIN')
+
+      // Delete items first (due to foreign key constraint)
+      await client.query(
+        'DELETE FROM watchlist_items WHERE folder_id = $1 AND user_id = $2',
+        [folderId, userId]
+      )
+
+      // Delete folder
+      await client.query(
+        'DELETE FROM watchlist_folders WHERE id = $1 AND user_id = $2',
+        [folderId, userId]
+      )
+
+      await client.query('COMMIT')
+    } catch (error) {
+      await client.query('ROLLBACK')
+      throw error
+    } finally {
+      client.release()
+    }
+  },
+
+  // Rename a folder
+  async renameFolder(userId: string, folderId: string, newName: string): Promise<WatchlistFolder> {
+    const result = await pool.query(
+      `UPDATE watchlist_folders 
+       SET name = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2 AND user_id = $3
+       RETURNING *`,
+      [newName, folderId, userId]
+    )
+
+    if (result.rows.length === 0) {
+      throw new Error('Folder not found or access denied')
+    }
+
+    return toCamelCase(result.rows[0])
+  },
+
+  // Toggle folder expansion
+  async toggleFolder(userId: string, folderId: string): Promise<WatchlistFolder> {
+    const result = await pool.query(
+      `UPDATE watchlist_folders 
+       SET is_expanded = NOT is_expanded, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1 AND user_id = $2
+       RETURNING *`,
+      [folderId, userId]
+    )
+
+    if (result.rows.length === 0) {
+      throw new Error('Folder not found or access denied')
+    }
+
+    return toCamelCase(result.rows[0])
+  },
+
+  // Add item to folder
+  async addItemToFolder(
+    userId: string, 
+    folderId: string, 
+    item: { ticker: string; company?: string; logo?: string }
+  ): Promise<WatchlistItem> {
+    const client = await pool.connect()
+    try {
+      const id = nanoid()
+      
+      // Get the next position within the folder
+      const positionResult = await client.query(
+        'SELECT COALESCE(MAX(position), -1) + 1 as next_position FROM watchlist_items WHERE folder_id = $1',
+        [folderId]
+      )
+      const position = positionResult.rows[0].next_position
+
+      const result = await client.query(
+        `INSERT INTO watchlist_items (id, folder_id, user_id, ticker, company, logo, position)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING *`,
+        [id, folderId, userId, item.ticker, item.company, item.logo, position]
+      )
+
+      return toCamelCase(result.rows[0])
+    } catch (error) {
+      // Handle unique constraint violation
+      if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
+        throw new Error(`${item.ticker} is already in this folder`)
+      }
+      throw error
+    } finally {
+      client.release()
+    }
+  },
+
+  // Remove item from folder
+  async removeItemFromFolder(userId: string, folderId: string, itemId: string): Promise<void> {
+    const result = await pool.query(
+      'DELETE FROM watchlist_items WHERE id = $1 AND folder_id = $2 AND user_id = $3',
+      [itemId, folderId, userId]
+    )
+
+    if (result.rowCount === 0) {
+      throw new Error('Item not found or access denied')
+    }
+  },
+
+  // Move item between folders
+  async moveItemBetweenFolders(
+    userId: string, 
+    fromFolderId: string, 
+    toFolderId: string, 
+    itemId: string
+  ): Promise<WatchlistItem> {
+    const client = await pool.connect()
+    try {
+      await client.query('BEGIN')
+
+      // Get the next position in the target folder
+      const positionResult = await client.query(
+        'SELECT COALESCE(MAX(position), -1) + 1 as next_position FROM watchlist_items WHERE folder_id = $1',
+        [toFolderId]
+      )
+      const position = positionResult.rows[0].next_position
+
+      // Update the item
+      const result = await client.query(
+        `UPDATE watchlist_items 
+         SET folder_id = $1, position = $2
+         WHERE id = $3 AND folder_id = $4 AND user_id = $5
+         RETURNING *`,
+        [toFolderId, position, itemId, fromFolderId, userId]
+      )
+
+      if (result.rows.length === 0) {
+        throw new Error('Item not found or access denied')
+      }
+
+      await client.query('COMMIT')
+      return toCamelCase(result.rows[0])
+    } catch (error) {
+      await client.query('ROLLBACK')
+      throw error
+    } finally {
+      client.release()
+    }
+  },
+
+  // Get all symbols for a user (for quick lookup)
+  async getAllUserSymbols(userId: string): Promise<string[]> {
+    const result = await pool.query(
+      'SELECT DISTINCT ticker FROM watchlist_items WHERE user_id = $1 ORDER BY ticker',
+      [userId]
+    )
+
+    return result.rows.map(row => row.ticker)
+  },
+
+  // Find item across all folders
+  async findItemInFolders(userId: string, ticker: string): Promise<{ folder: WatchlistFolder; item: WatchlistItem } | null> {
+    const result = await pool.query(
+      `SELECT 
+         wi.*,
+         wf.id as folder_id,
+         wf.name as folder_name,
+         wf.is_expanded as folder_is_expanded,
+         wf.position as folder_position,
+         wf.created_at as folder_created_at,
+         wf.updated_at as folder_updated_at
+       FROM watchlist_items wi
+       JOIN watchlist_folders wf ON wi.folder_id = wf.id
+       WHERE wi.user_id = $1 AND LOWER(wi.ticker) = LOWER($2)
+       LIMIT 1`,
+      [userId, ticker]
+    )
+
+    if (result.rows.length === 0) {
+      return null
+    }
+
+    const row = result.rows[0]
+    return {
+      folder: toCamelCase({
+        id: row.folder_id,
+        userId: row.user_id,
+        name: row.folder_name,
+        isExpanded: row.folder_is_expanded,
+        position: row.folder_position,
+        createdAt: row.folder_created_at,
+        updatedAt: row.folder_updated_at
+      }),
+      item: toCamelCase({
+        id: row.id,
+        folderId: row.folder_id,
+        userId: row.user_id,
+        ticker: row.ticker,
+        company: row.company,
+        logo: row.logo,
+        addedDate: row.added_date,
+        position: row.position
+      })
+    }
+  },
+
+  // Create default folders for a new user
+  async createDefaultFolders(userId: string): Promise<WatchlistFolder[]> {
+    const client = await pool.connect()
+    try {
+      await client.query('BEGIN')
+
+      const defaultFolders = [
+        { name: 'Crypto', isExpanded: true, position: 0 },
+        { name: 'Tech Stocks', isExpanded: true, position: 1 },
+        { name: 'Israeli Stocks', isExpanded: false, position: 2 }
+      ]
+
+      const created: WatchlistFolder[] = []
+
+      for (const folder of defaultFolders) {
+        const id = nanoid()
+        const result = await client.query(
+          `INSERT INTO watchlist_folders (id, user_id, name, is_expanded, position)
+           VALUES ($1, $2, $3, $4, $5)
+           RETURNING *`,
+          [id, userId, folder.name, folder.isExpanded, folder.position]
+        )
+        created.push(toCamelCase(result.rows[0]))
+      }
+
+      await client.query('COMMIT')
+      return created
+    } catch (error) {
+      await client.query('ROLLBACK')
+      throw error
+    } finally {
+      client.release()
+    }
   }
 }

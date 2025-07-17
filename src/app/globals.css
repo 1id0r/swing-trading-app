@@ -1031,21 +1031,9 @@
   pointer-events: none;
 }
 
-.dock-menu__item:hover::before {
-  opacity: 1;
-  transform: scale(1);
-}
 
-.dock-menu__item:hover {
-  transform: translateY(-3px) scale(1.08);
-  /* Reduced movement */
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(20px);
-  box-shadow:
-    0 12px 30px rgba(0, 0, 0, 0.15),
-    0 4px 12px rgba(59, 130, 246, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-}
+
+
 
 
 /* Active indicator - now a dot instead of line */
@@ -1084,12 +1072,7 @@
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
-.dock-menu__item:hover .dock-menu__icon .icon {
-  color: var(--component-active-color, #3b82f6);
-  transform: scale(1.2) rotate(5deg);
-  /* Increased scale since no label */
-  filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.3));
-}
+
 
 .dock-menu__item.active .dock-menu__icon .icon {
   color: var(--component-active-color, #3b82f6);
@@ -1281,10 +1264,7 @@
   cursor: pointer !important;
 }
 
-.watchlist-button-primary:hover {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3) !important;
-}
+
 
 .watchlist-button-secondary {
   background: var(--bg-secondary) !important;

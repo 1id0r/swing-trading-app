@@ -97,3 +97,47 @@ CREATE TRIGGER update_trades_updated_at
 CREATE TRIGGER update_positions_updated_at 
     BEFORE UPDATE ON positions 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+    -- Watchlist Folders Table
+CREATE TABLE IF NOT EXISTS watchlist_folders (
+  id VARCHAR(50) PRIMARY KEY,
+  user_id VARCHAR(50) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(100) NOT NULL,
+  is_expanded BOOLEAN DEFAULT true,
+  position INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Watchlist Items Table
+CREATE TABLE IF NOT EXISTS watchlist_items (
+  id VARCHAR(50) PRIMARY KEY,
+  folder_id VARCHAR(50) NOT NULL REFERENCES watchlist_folders(id) ON DELETE CASCADE,
+  user_id VARCHAR(50) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  ticker VARCHAR(20) NOT NULL,
+  company VARCHAR(200),
+  logo TEXT,
+  added_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  position INTEGER DEFAULT 0,
+  UNIQUE(folder_id, ticker) -- Prevent duplicate tickers in same folder
+);
+
+-- Indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_watchlist_folders_user_id ON watchlist_folders(user_id);
+CREATE INDEX IF NOT EXISTS idx_watchlist_items_folder_id ON watchlist_items(folder_id);
+CREATE INDEX IF NOT EXISTS idx_watchlist_items_user_id ON watchlist_items(user_id);
+CREATE INDEX IF NOT EXISTS idx_watchlist_items_ticker ON watchlist_items(ticker);
+
+-- Function to update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Trigger for watchlist_folders
+CREATE TRIGGER update_watchlist_folders_updated_at 
+    BEFORE UPDATE ON watchlist_folders 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

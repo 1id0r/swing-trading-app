@@ -1,4 +1,4 @@
-// Enhanced Portfolio Page with Market Hours - No API calls when market closed
+// Enhanced Portfolio Page with Market Hours - Fixed folder functionality
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { MobileLayout } from '@/components/layout/MobileLayout'
 import { useTradeStore } from '@/stores/useTradeStore'
 import { useWatchlistStore } from '@/stores/useWatchlistStore'
+import { useWatchlistInit } from '@/hooks/useWatchlistInit' // ✅ Add this import
 import { useRealtimePrices } from '@/hooks/useRealtimePrices'
 import { useMarketAwareData } from '@/hooks/useMarketAwareData'
 import { MarketHoursService, MarketStatus } from '@/lib/marketHours'
@@ -49,6 +50,10 @@ interface Position {
 export default function PortfolioPage() {
   const router = useRouter()
   const { positions, portfolioStats, fetchPositions, isLoadingPositions, error } = useTradeStore()
+
+  // ✅ Initialize watchlist data when user is authenticated
+  useWatchlistInit()
+
   const {
     folders,
     addFolder,
@@ -59,6 +64,8 @@ export default function PortfolioPage() {
     removeItemFromFolder,
     moveItemBetweenFolders,
     getAllSymbols,
+    loading: watchlistLoading,
+    error: watchlistError,
   } = useWatchlistStore()
 
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
@@ -77,6 +84,11 @@ export default function PortfolioPage() {
   const [dataLoadingStates, setDataLoadingStates] = useState<Record<string, 'loading' | 'live' | 'fallback' | 'error'>>(
     {}
   )
+
+  // ✅ Debug: Log folders to make sure they're loaded
+  useEffect(() => {
+    console.log('🐛 Folders in portfolio page:', folders)
+  }, [folders])
 
   // Get symbols from positions and watchlist
   const symbols = useMemo(() => {
@@ -140,7 +152,7 @@ export default function PortfolioPage() {
 
   useEffect(() => {
     console.log('🔍 Portfolio page - useMarketAwareData returned:', {
-      marketDataKeys: Object.keys(marketData),
+      marketDataKeys: Object.keys(marketData || {}),
       lastMarketPricesKeys: Object.keys(lastMarketPrices || {}),
       lastMarketPricesData: lastMarketPrices,
       isLive,
@@ -290,24 +302,25 @@ export default function PortfolioPage() {
     }
   }, [prices, dataLoadingStates])
 
-  // DEBUG VERSION: Replace your getBestPriceData function with this temporarily to see what's happening
-
+  // Enhanced getBestPriceData function with lastMarketPrices support
   const getBestPriceData = (symbol: string) => {
     const livePrice = prices[symbol]
-    const marketPrice = marketData[symbol] // This might be empty
-    const directPrice = directPrices[symbol] // ✅ NEW: Use direct API data
+    const marketPrice = marketData?.[symbol]
+    const directPrice = directPrices[symbol]
     const fallback = fallbackData[symbol]
+    const lastMarketPrice = lastMarketPrices?.[symbol]
 
     console.log(`🔍 DEBUG - getBestPriceData for ${symbol}:`, {
       livePrice,
       marketPrice,
-      directPrice, // ✅ NEW: Check direct price
+      directPrice,
       fallback,
+      lastMarketPrice,
       marketStatus: marketStatus?.isOpen,
       isLive,
     })
 
-    // Prefer live WebSocket data (only available when market is open)
+    // 1. Prefer live WebSocket data (only available when market is open)
     if (livePrice && livePrice.isLive && livePrice.price > 0) {
       console.log(`✅ ${symbol}: Using live price: $${livePrice.price}`)
       return {
@@ -322,7 +335,7 @@ export default function PortfolioPage() {
       }
     }
 
-    // Use market-aware data (respects market hours)
+    // 2. Use market-aware data (respects market hours)
     if (marketPrice && marketPrice.c > 0) {
       console.log(`✅ ${symbol}: Using market data: $${marketPrice.c}`)
       return {
@@ -337,7 +350,7 @@ export default function PortfolioPage() {
       }
     }
 
-    // ✅ NEW: Use direct API data (this should work!)
+    // 3. Use direct API data
     if (directPrice && directPrice.c > 0) {
       console.log(`✅ ${symbol}: Using direct API price: $${directPrice.c}`)
       return {
@@ -346,13 +359,47 @@ export default function PortfolioPage() {
         changePercent: directPrice.dp || 0,
         isLive: false,
         ageLabel: marketStatus?.isOpen ? 'API Live' : 'Last Close',
-        showAsStale: false, // Don't show as stale since this is current data
+        showAsStale: false,
         dataAge: 'direct_api',
         timestamp: Date.now(),
       }
     }
 
-    // Fallback to existing fallback data
+    // 4. ✅ Use lastMarketPrices (this should work when market is closed)
+    if (lastMarketPrice) {
+      console.log(`✅ ${symbol}: Using last market price:`, lastMarketPrice)
+
+      // Handle both array format [timestamp, price] and object format
+      if (Array.isArray(lastMarketPrice) && lastMarketPrice.length >= 2 && lastMarketPrice[1] > 0) {
+        const ageInMs = Date.now() - lastMarketPrice[0]
+        const ageInHours = ageInMs / (1000 * 60 * 60)
+
+        return {
+          price: lastMarketPrice[1],
+          change: 0,
+          changePercent: 0,
+          isLive: false,
+          ageLabel: 'Last Close',
+          showAsStale: false,
+          dataAge: 'last_market',
+          timestamp: lastMarketPrice[0],
+        }
+      } else if (lastMarketPrice.price && lastMarketPrice.price > 0) {
+        // Object format: { symbol, price, change, changePercent, timestamp }
+        return {
+          price: lastMarketPrice.price,
+          change: lastMarketPrice.change || 0,
+          changePercent: lastMarketPrice.changePercent || 0,
+          isLive: false,
+          ageLabel: 'Last Close',
+          showAsStale: false,
+          dataAge: 'last_market',
+          timestamp: lastMarketPrice.timestamp || 0,
+        }
+      }
+    }
+
+    // 5. Fallback to existing fallback data
     if (fallback && fallback.price > 0) {
       console.log(`✅ ${symbol}: Using fallback data: $${fallback.price}`)
       return {
@@ -367,7 +414,7 @@ export default function PortfolioPage() {
       }
     }
 
-    // No data available
+    // 6. No data available
     console.log(`❌ ${symbol}: No data available`)
     return {
       price: 0,
@@ -380,6 +427,7 @@ export default function PortfolioPage() {
       timestamp: 0,
     }
   }
+
   // Handle position click to navigate to stock detail
   const handlePositionClick = (position: Position) => {
     router.push(`/portfolio/${position.ticker}`)
@@ -394,6 +442,7 @@ export default function PortfolioPage() {
     if (!user) return // ⬅️ wait until Firebase user is ready
     fetchPositions(true).then(() => setLastUpdate(new Date()))
   }, [user, fetchPositions])
+
   useEffect(() => {
     if (!user) return // ⬅️ same guard
     if (!marketStatus?.isOpen) return
@@ -405,6 +454,7 @@ export default function PortfolioPage() {
 
     return () => clearInterval(interval)
   }, [user, marketStatus?.isOpen, fetchPositions])
+
   const handleRefreshPrices = async () => {
     if (isRefreshing) return
 
@@ -432,9 +482,6 @@ export default function PortfolioPage() {
       setIsRefreshing(false)
     }
   }
-
-  // Calculate live portfolio stats
-  // ✅ FIXED: Update your livePortfolioStats useMemo to include lastMarketPrices
 
   // Calculate live portfolio stats
   const livePortfolioStats = useMemo(() => {
@@ -480,22 +527,32 @@ export default function PortfolioPage() {
       totalUnrealizedPnL: totalValue - totalCost,
       totalPositions: positions.length,
     }
-  }, [positions, prices, marketData, directPrices, fallbackData])
+  }, [positions, prices, marketData, directPrices, fallbackData, lastMarketPrices])
 
-  // Watchlist functions
-  const handleAddFolder = () => {
+  // ✅ Fixed watchlist functions with proper async/await
+  const handleAddFolder = async () => {
     if (!newFolderName.trim()) return
-    addFolder(newFolderName.trim())
-    setNewFolderName('')
-    setShowAddFolder(false)
+    try {
+      await addFolder(newFolderName.trim())
+      setNewFolderName('')
+      setShowAddFolder(false)
+      console.log('✅ Folder added successfully')
+    } catch (error) {
+      console.error('❌ Failed to add folder:', error)
+    }
   }
 
-  const handleRenameFolder = (folderId: string, newName: string) => {
-    renameFolder(folderId, newName)
-    setEditingFolder(null)
+  const handleRenameFolder = async (folderId: string, newName: string) => {
+    try {
+      await renameFolder(folderId, newName)
+      setEditingFolder(null)
+      console.log('✅ Folder renamed successfully')
+    } catch (error) {
+      console.error('❌ Failed to rename folder:', error)
+    }
   }
 
-  // Drag and drop functions
+  // ✅ Enhanced drag and drop functions with touch support
   const handleDragStart = (item: any, fromFolderId: string) => {
     setDraggedItem({ item, fromFolderId })
   }
@@ -504,7 +561,7 @@ export default function PortfolioPage() {
     e.preventDefault()
   }
 
-  const handleDrop = (e: React.DragEvent, toFolderId: string) => {
+  const handleDrop = async (e: React.DragEvent, toFolderId: string) => {
     e.preventDefault()
 
     if (!draggedItem || draggedItem.fromFolderId === toFolderId) {
@@ -512,17 +569,110 @@ export default function PortfolioPage() {
       return
     }
 
-    moveItemBetweenFolders(draggedItem.fromFolderId, toFolderId, draggedItem.item.id)
+    try {
+      await moveItemBetweenFolders(draggedItem.fromFolderId, toFolderId, draggedItem.item.id)
+      setDraggedItem(null)
+      console.log('✅ Item moved successfully')
+    } catch (error) {
+      console.error('❌ Failed to move item:', error)
+      setDraggedItem(null)
+    }
+  }
+
+  // ✅ Touch support for mobile drag and drop
+  const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragOverFolder, setDragOverFolder] = useState<string | null>(null)
+
+  const handleTouchStart = (e: React.TouchEvent, item: any, fromFolderId: string) => {
+    const touch = e.touches[0]
+    setTouchStartPos({ x: touch.clientX, y: touch.clientY })
+    setDraggedItem({ item, fromFolderId })
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartPos || !draggedItem) return
+
+    const touch = e.touches[0]
+    const deltaX = Math.abs(touch.clientX - touchStartPos.x)
+    const deltaY = Math.abs(touch.clientY - touchStartPos.y)
+
+    // Start dragging if moved more than 10px
+    if (deltaX > 10 || deltaY > 10) {
+      setIsDragging(true)
+      e.preventDefault() // Prevent scrolling while dragging
+
+      // Find element under touch point
+      const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY)
+      const folderElement = elementBelow?.closest('[data-folder-id]')
+
+      if (folderElement) {
+        const folderId = folderElement.getAttribute('data-folder-id')
+        setDragOverFolder(folderId)
+      } else {
+        setDragOverFolder(null)
+      }
+    }
+  }
+
+  const handleTouchEnd = async (e: React.TouchEvent) => {
+    if (!isDragging || !draggedItem || !dragOverFolder) {
+      setTouchStartPos(null)
+      setIsDragging(false)
+      setDragOverFolder(null)
+      setDraggedItem(null)
+      return
+    }
+
+    // Perform the move
+    if (dragOverFolder !== draggedItem.fromFolderId) {
+      try {
+        await moveItemBetweenFolders(draggedItem.fromFolderId, dragOverFolder, draggedItem.item.id)
+        console.log('✅ Touch drag: Item moved successfully')
+      } catch (error) {
+        console.error('❌ Touch drag: Failed to move item:', error)
+      }
+    }
+
+    // Reset states
+    setTouchStartPos(null)
+    setIsDragging(false)
+    setDragOverFolder(null)
     setDraggedItem(null)
   }
 
-  // Handle adding stock from search
-  const handleAddStock = (stock: any, folderId: string) => {
-    addItemToFolder(folderId, {
-      ticker: stock.ticker,
-      company: stock.company,
-      logo: stock.logo,
-    })
+  // ✅ Fixed handleAddStock with proper validation
+  const handleAddStock = async (stock: any, folderId: string) => {
+    console.log('🐛 handleAddStock called with:', { stock, folderId, folders })
+
+    // ✅ Validate inputs
+    if (!folderId) {
+      console.error('❌ No folder ID provided')
+      return
+    }
+
+    if (!stock.ticker) {
+      console.error('❌ No ticker provided')
+      return
+    }
+
+    // ✅ Check if folder exists
+    const folder = folders.find((f) => f.id === folderId)
+    if (!folder) {
+      console.error('❌ Folder not found:', folderId)
+      return
+    }
+
+    try {
+      await addItemToFolder(folderId, {
+        ticker: stock.ticker,
+        company: stock.company,
+        logo: stock.logo,
+      })
+      console.log('✅ Stock added successfully')
+    } catch (error) {
+      console.error('❌ Failed to add stock:', error)
+    }
   }
 
   const safePositions = positions || []
@@ -552,7 +702,7 @@ export default function PortfolioPage() {
           >
             <div className='flex items-center justify-center gap-2'>
               <Eye className='w-4 h-4' />
-              Watchlist
+              Watchlist ({folders.reduce((total, folder) => total + folder.items.length, 0)})
             </div>
           </button>
         </div>
@@ -611,10 +761,23 @@ export default function PortfolioPage() {
           </div>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className='bg-red-500/20 border border-red-500 rounded-lg p-3'>
-            <p className='text-red-400 text-sm'>{error}</p>
+        {/* Loading States */}
+        {(isLoadingPositions || watchlistLoading) && (
+          <div className='flex items-center justify-center p-4'>
+            <Loader2 className='w-5 h-5 animate-spin text-blue-500' />
+            <span className='ml-2 text-sm text-gray-400'>
+              Loading {isLoadingPositions ? 'portfolio' : 'watchlist'}...
+            </span>
+          </div>
+        )}
+
+        {/* Error States */}
+        {(error || watchlistError) && (
+          <div className='bg-red-500/10 border border-red-500/20 rounded-lg p-3'>
+            <div className='flex items-center gap-2 text-red-400 text-sm'>
+              <AlertCircle className='w-4 h-4' />
+              {error || watchlistError}
+            </div>
           </div>
         )}
 
@@ -778,7 +941,7 @@ export default function PortfolioPage() {
                       </div>
 
                       <div className='mt-3 pt-3 border-t border-gray-700 flex justify-between text-xs theme-text-secondary'>
-                        <span> Cost: ${Number(position.totalCost ?? 0).toFixed(2)}</span>
+                        <span>Cost: ${Number(position.totalCost ?? 0).toFixed(2)}</span>
                         <span>Value: ${(currentValue || 0).toFixed(2)}</span>
                       </div>
 
@@ -809,6 +972,16 @@ export default function PortfolioPage() {
         {/* Watchlist Tab Content */}
         {activeTab === 'watchlist' && (
           <div className='space-y-4'>
+            {/* Mobile Drag Indicator */}
+            {isDragging && (
+              <div className='fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg'>
+                <div className='flex items-center gap-2'>
+                  <Move className='w-4 h-4' />
+                  <span>Moving {draggedItem?.item.ticker}</span>
+                </div>
+              </div>
+            )}
+
             {/* Add Folder Button */}
             <div className='flex items-center justify-between'>
               <h3 className='text-lg font-semibold watchlist-text-primary'>Watchlist</h3>
@@ -821,12 +994,14 @@ export default function PortfolioPage() {
               </button>
             </div>
 
-            {/* Stock Search */}
-            <StockSearch
-              onAddStock={handleAddStock}
-              folders={folders}
-              placeholder='Search and add stocks to watchlist...'
-            />
+            {/* Stock Search - Only show if we have folders */}
+            {folders.length > 0 && (
+              <StockSearch
+                onAddStock={handleAddStock}
+                folders={folders}
+                placeholder='Search and add stocks to watchlist...'
+              />
+            )}
 
             {/* Add Folder Input */}
             {showAddFolder && (
@@ -858,295 +1033,310 @@ export default function PortfolioPage() {
 
             {/* Watchlist Folders */}
             <div className='space-y-3 watchlist-container'>
-              {folders.map((folder) => (
-                <div
-                  key={folder.id}
-                  className='watchlist-folder-card p-4'
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, folder.id)}
-                >
-                  {/* Folder Header */}
-                  <div className='flex items-center justify-between mb-3'>
-                    <div className='flex items-center gap-2'>
-                      <button
-                        onClick={() => toggleFolder(folder.id)}
-                        className='p-1 hover:bg-gray-700 rounded transition-colors'
-                      >
-                        {folder.isExpanded ? (
-                          <ChevronDown className='w-4 h-4 watchlist-text-secondary' />
-                        ) : (
-                          <ChevronRight className='w-4 h-4 watchlist-text-secondary' />
-                        )}
-                      </button>
-
-                      {editingFolder === folder.id ? (
-                        <input
-                          type='text'
-                          defaultValue={folder.name}
-                          className='px-2 py-1 watchlist-folder-input text-sm'
-                          onBlur={(e) => handleRenameFolder(folder.id, e.target.value)}
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              handleRenameFolder(folder.id, e.currentTarget.value)
-                            }
-                          }}
-                          autoFocus
-                        />
-                      ) : (
-                        <h4
-                          className='font-medium watchlist-text-primary cursor-pointer'
+              {folders.length === 0 ? (
+                <div className='text-center py-12'>
+                  <div className='text-gray-400 mb-2'>No watchlist folders</div>
+                  <div className='text-sm text-gray-400'>Create a folder to start tracking stocks</div>
+                </div>
+              ) : (
+                folders.map((folder) => (
+                  <div
+                    key={folder.id}
+                    data-folder-id={folder.id}
+                    className={`watchlist-folder-card p-4 transition-all duration-200 ${
+                      dragOverFolder === folder.id && isDragging ? 'ring-2 ring-blue-500 bg-blue-500/10 scale-105' : ''
+                    }`}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, folder.id)}
+                  >
+                    {/* Folder Header */}
+                    <div className='flex items-center justify-between mb-3'>
+                      <div className='flex items-center gap-2'>
+                        <button
                           onClick={() => toggleFolder(folder.id)}
+                          className='p-1 hover:bg-gray-700 rounded transition-colors'
                         >
-                          {folder.name}
-                        </h4>
-                      )}
+                          {folder.isExpanded ? (
+                            <ChevronDown className='w-4 h-4 watchlist-text-secondary' />
+                          ) : (
+                            <ChevronRight className='w-4 h-4 watchlist-text-secondary' />
+                          )}
+                        </button>
 
-                      <span className='text-xs watchlist-text-secondary'>({folder.items.length})</span>
+                        {editingFolder === folder.id ? (
+                          <input
+                            type='text'
+                            defaultValue={folder.name}
+                            className='px-2 py-1 watchlist-folder-input text-sm'
+                            onBlur={(e) => handleRenameFolder(folder.id, e.target.value)}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                handleRenameFolder(folder.id, e.currentTarget.value)
+                              }
+                            }}
+                            autoFocus
+                          />
+                        ) : (
+                          <h4
+                            className='font-medium watchlist-text-primary cursor-pointer'
+                            onClick={() => toggleFolder(folder.id)}
+                          >
+                            {folder.name}
+                          </h4>
+                        )}
+
+                        <span className='text-xs watchlist-text-secondary'>({folder.items?.length || 0})</span>
+                      </div>
+
+                      {/* Folder Actions */}
+                      <div className='flex items-center gap-1'>
+                        <button
+                          onClick={() => setEditingFolder(folder.id)}
+                          className='p-1 hover:bg-gray-700 rounded transition-colors'
+                        >
+                          <Edit className='w-3 h-3 watchlist-icon' />
+                        </button>
+                        <button
+                          onClick={() => deleteFolder(folder.id)}
+                          className='p-1 hover:bg-gray-700 rounded transition-colors'
+                        >
+                          <Trash2 className='w-3 h-3 text-red-400' />
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Folder Actions */}
-                    <div className='flex items-center gap-1'>
-                      <button
-                        onClick={() => setEditingFolder(folder.id)}
-                        className='p-1 hover:bg-gray-700 rounded transition-colors'
-                      >
-                        <Edit className='w-3 h-3 watchlist-icon' />
-                      </button>
-                      <button
-                        onClick={() => deleteFolder(folder.id)}
-                        className='p-1 hover:bg-gray-700 rounded transition-colors'
-                      >
-                        <Trash2 className='w-3 h-3 text-red-400' />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Folder Items */}
-                  {folder.isExpanded && (
-                    <div className='space-y-2'>
-                      {folder.items.length === 0 ? (
-                        <div className='text-center py-4 text-sm watchlist-text-secondary'>
-                          No symbols in this folder
-                        </div>
-                      ) : (
-                        <>
-                          {/* Header Row */}
-                          <div className='watchlist-table-header'>
-                            <div className='grid grid-cols-12 gap-3 items-center text-xs watchlist-text-secondary font-medium'>
-                              <div className='col-span-4 watchlist-col-symbol'>Symbol</div>
-                              <div className='col-span-3 watchlist-col-price'>Last</div>
-                              <div className='col-span-2 watchlist-col-change'>Chg</div>
-                              <div className='col-span-2 watchlist-col-change'>Chg%</div>
-                              <div className='col-span-1'></div>
-                            </div>
+                    {/* Folder Items */}
+                    {folder.isExpanded && (
+                      <div className='space-y-2'>
+                        {!folder.items || folder.items.length === 0 ? (
+                          <div className='text-center py-4 text-gray-400 text-sm'>
+                            No stocks in this folder. Use search above to add stocks.
                           </div>
+                        ) : (
+                          <>
+                            {/* Header Row */}
+                            <div className='watchlist-table-header'>
+                              <div className='grid grid-cols-12 gap-3 items-center text-xs watchlist-text-secondary font-medium'>
+                                <div className='col-span-4 watchlist-col-symbol'>Symbol</div>
+                                <div className='col-span-3 watchlist-col-price'>Last</div>
+                                <div className='col-span-2 watchlist-col-change'>Chg</div>
+                                <div className='col-span-2 watchlist-col-change'>Chg%</div>
+                                <div className='col-span-1'></div>
+                              </div>
+                            </div>
 
-                          {/* Stock Items */}
-                          {folder.items.map((item) => {
-                            const bestPrice = getBestPriceData(item.ticker)
-                            const loadingState = dataLoadingStates[item.ticker]
-                            const currentPrice = bestPrice.price
-                            const isLiveData = bestPrice.isLive
-                            const change = bestPrice.change
-                            const changePercent = bestPrice.changePercent
+                            {/* Stock Items */}
+                            {folder.items.map((item) => {
+                              const bestPrice = getBestPriceData(item.ticker)
+                              const loadingState = dataLoadingStates[item.ticker]
+                              const currentPrice = bestPrice.price
+                              const isLiveData = bestPrice.isLive
+                              const change = bestPrice.change
+                              const changePercent = bestPrice.changePercent
 
-                            // Get display status
-                            const getDisplayStatus = () => {
-                              if (loadingState === 'loading' && currentPrice === 0) {
-                                return {
-                                  status: 'loading',
-                                  indicator: <Loader2 className='w-3 h-3 animate-spin text-gray-400' />,
-                                  statusText: 'Loading...',
-                                  statusColor: 'text-gray-400',
+                              // Get display status
+                              const getDisplayStatus = () => {
+                                if (loadingState === 'loading' && currentPrice === 0) {
+                                  return {
+                                    status: 'loading',
+                                    indicator: <Loader2 className='w-3 h-3 animate-spin text-gray-400' />,
+                                    statusText: 'Loading...',
+                                    statusColor: 'text-gray-400',
+                                  }
                                 }
-                              }
 
-                              if (loadingState === 'error') {
-                                return {
-                                  status: 'error',
-                                  indicator: <AlertCircle className='w-3 h-3 text-red-400' />,
-                                  statusText: 'Error',
-                                  statusColor: 'text-red-400',
+                                if (loadingState === 'error') {
+                                  return {
+                                    status: 'error',
+                                    indicator: <AlertCircle className='w-3 h-3 text-red-400' />,
+                                    statusText: 'Error',
+                                    statusColor: 'text-red-400',
+                                  }
                                 }
-                              }
 
-                              if (isLiveData && marketStatus?.isOpen) {
-                                return {
-                                  status: 'live',
-                                  indicator: <div className='w-2 h-2 bg-green-400 rounded-full animate-pulse'></div>,
-                                  statusText: 'Live',
-                                  statusColor: 'text-green-400',
+                                if (isLiveData && marketStatus?.isOpen) {
+                                  return {
+                                    status: 'live',
+                                    indicator: <div className='w-2 h-2 bg-green-400 rounded-full animate-pulse'></div>,
+                                    statusText: 'Live',
+                                    statusColor: 'text-green-400',
+                                  }
                                 }
-                              }
 
-                              if (!marketStatus?.isOpen) {
+                                if (!marketStatus?.isOpen) {
+                                  return {
+                                    status: 'closed',
+                                    indicator: <div className='w-2 h-2 bg-gray-400 rounded-full'></div>,
+                                    statusText: 'Closed',
+                                    statusColor: 'text-gray-400',
+                                  }
+                                }
+
+                                if (loadingState === 'fallback' || bestPrice.ageLabel === 'API Live') {
+                                  const ageInMinutes = bestPrice.timestamp
+                                    ? (Date.now() - bestPrice.timestamp) / 60000
+                                    : 0
+                                  return {
+                                    status: 'api',
+                                    indicator: <div className='w-2 h-2 bg-blue-400 rounded-full'></div>,
+                                    statusText: ageInMinutes < 5 ? 'Recent' : `${Math.floor(ageInMinutes)}m ago`,
+                                    statusColor: 'text-blue-400',
+                                  }
+                                }
+
                                 return {
-                                  status: 'closed',
+                                  status: 'unknown',
                                   indicator: <div className='w-2 h-2 bg-gray-400 rounded-full'></div>,
-                                  statusText: 'Closed',
+                                  statusText: '-',
                                   statusColor: 'text-gray-400',
                                 }
                               }
 
-                              if (loadingState === 'fallback' || bestPrice.ageLabel === 'API Live') {
-                                const ageInMinutes = bestPrice.timestamp
-                                  ? (Date.now() - bestPrice.timestamp) / 60000
-                                  : 0
-                                return {
-                                  status: 'api',
-                                  indicator: <div className='w-2 h-2 bg-blue-400 rounded-full'></div>,
-                                  statusText: ageInMinutes < 5 ? 'Recent' : `${Math.floor(ageInMinutes)}m ago`,
-                                  statusColor: 'text-blue-400',
-                                }
-                              }
+                              const displayStatus = getDisplayStatus()
 
-                              return {
-                                status: 'unknown',
-                                indicator: <div className='w-2 h-2 bg-gray-400 rounded-full'></div>,
-                                statusText: '-',
-                                statusColor: 'text-gray-400',
-                              }
-                            }
+                              return (
+                                <div
+                                  key={item.id}
+                                  className={`watchlist-stock-item p-3 hover:bg-gray-800/50 transition-colors select-none ${
+                                    isDragging && draggedItem?.item.id === item.id ? 'opacity-50 scale-95' : ''
+                                  }`}
+                                  draggable
+                                  onDragStart={() => handleDragStart(item, folder.id)}
+                                  onTouchStart={(e) => handleTouchStart(e, item, folder.id)}
+                                  onTouchMove={handleTouchMove}
+                                  onTouchEnd={handleTouchEnd}
+                                  onClick={() => !isDragging && handleWatchlistItemClick(item)}
+                                >
+                                  {/* Stock Item Layout */}
+                                  <div className='grid grid-cols-12 gap-3 items-center'>
+                                    {/* Symbol & Company */}
+                                    <div className='col-span-4 flex items-center gap-2'>
+                                      <div className='w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs'>
+                                        {item.logo ? (
+                                          <img
+                                            src={item.logo}
+                                            alt={item.ticker}
+                                            className='w-6 h-6 rounded-full object-cover'
+                                            onError={(e) => {
+                                              const target = e.currentTarget as HTMLImageElement
+                                              target.style.display = 'none'
+                                            }}
+                                          />
+                                        ) : (
+                                          <div className='w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center'>
+                                            <span className='text-xs'>{item.ticker.charAt(0)}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className='min-w-0 flex-1'>
+                                        <div className='flex items-center gap-2'>
+                                          <span className='font-medium watchlist-text-primary text-sm'>
+                                            {item.ticker}
+                                          </span>
+                                          {displayStatus.indicator}
+                                        </div>
+                                        <div className='text-xs watchlist-text-secondary truncate flex items-center gap-2'>
+                                          <span>{item.company}</span>
+                                          <span className={`text-xs ${displayStatus.statusColor}`}>
+                                            {displayStatus.statusText}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
 
-                            const displayStatus = getDisplayStatus()
-
-                            return (
-                              <div
-                                key={item.id}
-                                className='watchlist-stock-item p-3 hover:bg-gray-800/50 transition-colors'
-                                draggable
-                                onDragStart={() => handleDragStart(item, folder.id)}
-                                onClick={() => handleWatchlistItemClick(item)}
-                              >
-                                {/* Stock Item Layout */}
-                                <div className='grid grid-cols-12 gap-3 items-center'>
-                                  {/* Symbol & Company */}
-                                  <div className='col-span-4 flex items-center gap-2'>
-                                    <div className='w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs'>
-                                      {item.logo ? (
-                                        <img
-                                          src={item.logo}
-                                          alt={item.ticker}
-                                          className='w-6 h-6 rounded-full object-cover'
-                                          onError={(e) => {
-                                            const target = e.currentTarget as HTMLImageElement
-                                            target.style.display = 'none'
-                                          }}
-                                        />
+                                    {/* Current Price */}
+                                    <div className='col-span-3 watchlist-col-price'>
+                                      {currentPrice > 0 ? (
+                                        <div className='space-y-1'>
+                                          <div
+                                            className={`font-medium text-sm ${
+                                              isLiveData && marketStatus?.isOpen
+                                                ? 'text-green-400'
+                                                : bestPrice.showAsStale
+                                                ? 'text-gray-400'
+                                                : 'watchlist-text-primary'
+                                            }`}
+                                          >
+                                            ${toFixed(currentPrice, 2)}
+                                          </div>
+                                          <div className='text-xs opacity-75'>{bestPrice.ageLabel}</div>
+                                        </div>
                                       ) : (
-                                        <div className='w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center'>
-                                          <span className='text-xs'>{item.ticker.charAt(0)}</span>
+                                        <div className='flex items-center gap-1 text-gray-400'>
+                                          {displayStatus.status === 'loading' ? (
+                                            <>
+                                              <Loader2 className='w-3 h-3 animate-spin' />
+                                              <span className='text-xs'>Loading</span>
+                                            </>
+                                          ) : (
+                                            <span className='text-sm'>$0.00</span>
+                                          )}
                                         </div>
                                       )}
                                     </div>
-                                    <div className='min-w-0 flex-1'>
-                                      <div className='flex items-center gap-2'>
-                                        <span className='font-medium watchlist-text-primary text-sm'>
-                                          {item.ticker}
-                                        </span>
-                                        {displayStatus.indicator}
-                                      </div>
-                                      <div className='text-xs watchlist-text-secondary truncate flex items-center gap-2'>
-                                        <span>{item.company}</span>
-                                        <span className={`text-xs ${displayStatus.statusColor}`}>
-                                          {displayStatus.statusText}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
 
-                                  {/* Current Price */}
-                                  <div className='col-span-3 watchlist-col-price'>
-                                    {currentPrice > 0 ? (
-                                      <div className='space-y-1'>
+                                    {/* Change Points */}
+                                    <div className='col-span-2 watchlist-col-change'>
+                                      {currentPrice > 0 && change !== 0 ? (
                                         <div
-                                          className={`font-medium text-sm ${
-                                            isLiveData && marketStatus?.isOpen
-                                              ? 'text-green-400'
-                                              : bestPrice.showAsStale
-                                              ? 'text-gray-400'
-                                              : 'watchlist-text-primary'
+                                          className={`flex items-center justify-center gap-1 text-sm ${
+                                            change >= 0 ? 'text-green-400' : 'text-red-400'
                                           }`}
                                         >
-                                          ${toFixed(currentPrice, 2)}
+                                          {change >= 0 ? (
+                                            <TrendingUp className='w-3 h-3' />
+                                          ) : (
+                                            <TrendingDown className='w-3 h-3' />
+                                          )}
+                                          <span className='font-medium'>
+                                            {change >= 0 ? '+' : ''}
+                                            {change.toFixed(2)}
+                                          </span>
                                         </div>
-                                        <div className='text-xs opacity-75'>{bestPrice.ageLabel}</div>
-                                      </div>
-                                    ) : (
-                                      <div className='flex items-center gap-1 text-gray-400'>
-                                        {displayStatus.status === 'loading' ? (
-                                          <>
-                                            <Loader2 className='w-3 h-3 animate-spin' />
-                                            <span className='text-xs'>Loading</span>
-                                          </>
-                                        ) : (
-                                          <span className='text-sm'>$0.00</span>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
+                                      ) : (
+                                        <span className='text-sm text-gray-400 text-center'>-</span>
+                                      )}
+                                    </div>
 
-                                  {/* Change Points */}
-                                  <div className='col-span-2 watchlist-col-change'>
-                                    {currentPrice > 0 && change !== 0 ? (
-                                      <div
-                                        className={`flex items-center justify-center gap-1 text-sm ${
-                                          change >= 0 ? 'text-green-400' : 'text-red-400'
-                                        }`}
+                                    {/* Change Percentage */}
+                                    <div className='col-span-2 watchlist-col-change'>
+                                      {currentPrice > 0 && changePercent !== 0 ? (
+                                        <div
+                                          className={`text-sm font-medium text-center ${
+                                            changePercent >= 0 ? 'text-green-400' : 'text-red-400'
+                                          }`}
+                                        >
+                                          {changePercent >= 0 ? '+' : ''}
+                                          {changePercent.toFixed(2)}%
+                                        </div>
+                                      ) : (
+                                        <span className='text-sm text-gray-400 text-center'>-</span>
+                                      )}
+                                    </div>
+
+                                    {/* Actions */}
+                                    <div className='col-span-1 flex justify-end'>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          removeItemFromFolder(folder.id, item.id)
+                                        }}
+                                        className='p-1 hover:bg-gray-700 rounded transition-colors'
                                       >
-                                        {change >= 0 ? (
-                                          <TrendingUp className='w-3 h-3' />
-                                        ) : (
-                                          <TrendingDown className='w-3 h-3' />
-                                        )}
-                                        <span className='font-medium'>
-                                          {change >= 0 ? '+' : ''}
-                                          {change.toFixed(2)}
-                                        </span>
-                                      </div>
-                                    ) : (
-                                      <span className='text-sm text-gray-400 text-center'>-</span>
-                                    )}
-                                  </div>
-
-                                  {/* Change Percentage */}
-                                  <div className='col-span-2 watchlist-col-change'>
-                                    {currentPrice > 0 && changePercent !== 0 ? (
-                                      <div
-                                        className={`text-sm font-medium text-center ${
-                                          changePercent >= 0 ? 'text-green-400' : 'text-red-400'
-                                        }`}
-                                      >
-                                        {changePercent >= 0 ? '+' : ''}
-                                        {changePercent.toFixed(2)}%
-                                      </div>
-                                    ) : (
-                                      <span className='text-sm text-gray-400 text-center'>-</span>
-                                    )}
-                                  </div>
-
-                                  {/* Actions */}
-                                  <div className='col-span-1 flex justify-end'>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        removeItemFromFolder(folder.id, item.id)
-                                      }}
-                                      className='p-1 hover:bg-gray-700 rounded transition-colors'
-                                    >
-                                      <Trash2 className='w-3 h-3 text-red-400' />
-                                    </button>
+                                        <Trash2 className='w-3 h-3 text-red-400' />
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            )
-                          })}
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
+                              )
+                            })}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}

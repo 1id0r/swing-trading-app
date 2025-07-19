@@ -1,4 +1,3 @@
-// Enhanced Portfolio Page with Market Hours - Fixed folder functionality
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
@@ -6,13 +5,14 @@ import { useRouter } from 'next/navigation'
 import { MobileLayout } from '@/components/layout/MobileLayout'
 import { useTradeStore } from '@/stores/useTradeStore'
 import { useWatchlistStore } from '@/stores/useWatchlistStore'
-import { useWatchlistInit } from '@/hooks/useWatchlistInit' // ✅ Add this import
+import { useWatchlistInit } from '@/hooks/useWatchlistInit'
 import { useRealtimePrices } from '@/hooks/useRealtimePrices'
 import { useMarketAwareData } from '@/hooks/useMarketAwareData'
 import { MarketHoursService, MarketStatus } from '@/lib/marketHours'
 import { StockSearch } from '@/components/watchlist/StockSearch'
 import { marketAwareApi } from '@/lib/marketAwareApi'
 import { useAuth } from '@/app/contexts/AuthContext'
+import { toFixed } from '@/lib/format' // Use your existing utility
 
 import {
   TrendingUp,
@@ -33,7 +33,6 @@ import {
   BarChart3,
   Loader2,
 } from 'lucide-react'
-import { toFixed } from '@/lib/format'
 
 interface Position {
   id: string
@@ -47,11 +46,31 @@ interface Position {
   lastPriceUpdate?: string
 }
 
+// ✅ Enhanced safe number helpers
+const safeNumber = (value: any, defaultValue: number = 0): number => {
+  const num = Number(value)
+  return isNaN(num) || !isFinite(num) ? defaultValue : num
+}
+
+const safeToFixed = (value: any, decimals: number = 2): string => {
+  const num = safeNumber(value, 0)
+  return num.toFixed(decimals)
+}
+
+const safeCalculation = (fn: () => number, defaultValue: number = 0): number => {
+  try {
+    const result = fn()
+    return safeNumber(result, defaultValue)
+  } catch (error) {
+    console.warn('Safe calculation failed:', error)
+    return defaultValue
+  }
+}
+
 export default function PortfolioPage() {
   const router = useRouter()
   const { positions, portfolioStats, fetchPositions, isLoadingPositions, error } = useTradeStore()
 
-  // ✅ Initialize watchlist data when user is authenticated
   useWatchlistInit()
 
   const {
@@ -79,16 +98,10 @@ export default function PortfolioPage() {
   const [loadingDirectPrices, setLoadingDirectPrices] = useState(false)
   const { user } = useAuth()
 
-  // State for fallback data (only used when market is open)
   const [fallbackData, setFallbackData] = useState<Record<string, any>>({})
   const [dataLoadingStates, setDataLoadingStates] = useState<Record<string, 'loading' | 'live' | 'fallback' | 'error'>>(
     {}
   )
-
-  // ✅ Debug: Log folders to make sure they're loaded
-  useEffect(() => {
-    console.log('🐛 Folders in portfolio page:', folders)
-  }, [folders])
 
   // Get symbols from positions and watchlist
   const symbols = useMemo(() => {
@@ -97,7 +110,7 @@ export default function PortfolioPage() {
     return [...new Set([...positionSymbols, ...watchlistSymbols])]
   }, [positions, getAllSymbols])
 
-  // Market-aware data hook (respects market hours)
+  // Market-aware data hook
   const {
     data: marketData,
     lastMarketPrices,
@@ -108,7 +121,7 @@ export default function PortfolioPage() {
     refresh,
   } = useMarketAwareData(symbols)
 
-  // WebSocket prices (only when market is open)
+  // WebSocket prices
   const { prices, isConnected } = useRealtimePrices(marketStatus?.isOpen ? symbols : [])
 
   // Initialize loading states
@@ -120,189 +133,7 @@ export default function PortfolioPage() {
     setDataLoadingStates(newStates)
   }, [symbols])
 
-  const testMarketAwareApi = async () => {
-    console.log('🧪 Testing marketAwareApi directly...')
-    try {
-      const testSymbols = ['MSFT', 'NVDA', 'AAPL']
-      const result = await marketAwareApi.getBatchQuotes(testSymbols)
-      console.log('🧪 Direct API test result:', result)
-    } catch (error) {
-      console.error('🧪 Direct API test failed:', error)
-    }
-  }
-  const safeToFixed = (value: number | null | undefined, decimals: number = 2): string => {
-    if (value === null || value === undefined || isNaN(value)) {
-      return '0.00'
-    }
-    return Number(value).toFixed(decimals)
-  }
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('lastMarketPrices')
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        console.log('💾 localStorage lastMarketPrices:', parsed)
-      } else {
-        console.log('💾 No lastMarketPrices in localStorage')
-      }
-    } catch (error) {
-      console.log('💾 Error reading localStorage:', error)
-    }
-  }, [])
-
-  useEffect(() => {
-    console.log('🔍 Portfolio page - useMarketAwareData returned:', {
-      marketDataKeys: Object.keys(marketData || {}),
-      lastMarketPricesKeys: Object.keys(lastMarketPrices || {}),
-      lastMarketPricesData: lastMarketPrices,
-      isLive,
-      marketStatus: marketStatus?.isOpen,
-      symbols,
-    })
-  }, [marketData, lastMarketPrices, isLive, marketStatus, symbols])
-
-  useEffect(() => {
-    const fetchDirectPrices = async () => {
-      if (symbols.length === 0) return
-
-      setLoadingDirectPrices(true)
-      try {
-        console.log('🔄 Fetching direct prices for:', symbols)
-
-        const response = await fetch('/api/stocks/batch-quotes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ symbols }),
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          setDirectPrices(data.quotes)
-          console.log('✅ Direct prices fetched:', data.quotes)
-        }
-      } catch (error) {
-        console.error('❌ Failed to fetch direct prices:', error)
-      } finally {
-        setLoadingDirectPrices(false)
-      }
-    }
-
-    fetchDirectPrices()
-
-    // Refresh every 30 seconds if market is open
-    if (marketStatus?.isOpen) {
-      const interval = setInterval(fetchDirectPrices, 30000)
-      return () => clearInterval(interval)
-    }
-  }, [symbols, marketStatus?.isOpen])
-
-  // Fetch fallback data for symbols (only when market is open)
-  const fetchFallbackData = async (symbolsToFetch: string[]) => {
-    if (symbolsToFetch.length === 0) return
-
-    // Don't fetch if market is closed
-    if (!marketStatus?.isOpen) {
-      console.log('🔒 Market closed - skipping fallback data fetch')
-      return
-    }
-
-    try {
-      console.log('📊 Fetching fallback data for:', symbolsToFetch)
-
-      const response = await fetch('/api/stocks/batch-quotes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbols: symbolsToFetch }),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        const newFallbackData = { ...fallbackData }
-        const newStates = { ...dataLoadingStates }
-
-        symbolsToFetch.forEach((symbol) => {
-          const quote = data.quotes[symbol]
-          if (quote && quote.c > 0) {
-            newFallbackData[symbol] = {
-              price: quote.c,
-              change: quote.d || 0,
-              changePercent: quote.dp || 0,
-              previousClose: quote.pc || 0,
-              timestamp: Date.now(),
-            }
-
-            // Only set to fallback if we don't have live data
-            if (!prices[symbol] || !prices[symbol].isLive) {
-              newStates[symbol] = 'fallback'
-            }
-
-            console.log(`✅ Fallback data for ${symbol}: $${quote.c} (${quote.d >= 0 ? '+' : ''}${quote.d})`)
-          } else {
-            newStates[symbol] = 'error'
-            console.warn(`⚠️ No valid data for ${symbol}`)
-          }
-        })
-
-        setFallbackData(newFallbackData)
-        setDataLoadingStates(newStates)
-      }
-    } catch (error) {
-      console.error('Failed to fetch fallback data:', error)
-      const newStates = { ...dataLoadingStates }
-      symbolsToFetch.forEach((symbol) => {
-        newStates[symbol] = 'error'
-      })
-      setDataLoadingStates(newStates)
-    }
-  }
-
-  // Load fallback data immediately when market opens
-  useEffect(() => {
-    if (symbols.length === 0 || !marketStatus?.isOpen) return
-
-    // Immediately load fallback data for all symbols when market is open
-    fetchFallbackData(symbols)
-
-    // Set up staggered timeouts for symbols that might be slow
-    const timeouts: NodeJS.Timeout[] = []
-
-    symbols.forEach((symbol, index) => {
-      // Refresh specific symbols that don't get live data within 10 seconds
-      const timeout = setTimeout(() => {
-        if (!prices[symbol] || !prices[symbol].isLive) {
-          console.log(`⏰ Refreshing slow symbol: ${symbol}`)
-          fetchFallbackData([symbol])
-        }
-      }, 10000 + index * 2000) // 10s, 12s, 14s, etc.
-
-      timeouts.push(timeout)
-    })
-
-    return () => {
-      timeouts.forEach(clearTimeout)
-    }
-  }, [symbols, marketStatus?.isOpen])
-
-  // Update loading states based on live data
-  useEffect(() => {
-    const newStates = { ...dataLoadingStates }
-    let hasChanges = false
-
-    Object.keys(prices).forEach((symbol) => {
-      const price = prices[symbol]
-      if (price && price.isLive && newStates[symbol] !== 'live') {
-        newStates[symbol] = 'live'
-        hasChanges = true
-        console.log(`🔴 ${symbol} now has live data`)
-      }
-    })
-
-    if (hasChanges) {
-      setDataLoadingStates(newStates)
-    }
-  }, [prices, dataLoadingStates])
-
-  // Enhanced getBestPriceData function with lastMarketPrices support
+  // ✅ Enhanced getBestPriceData with better null/NaN handling
   const getBestPriceData = (symbol: string) => {
     const livePrice = prices[symbol]
     const marketPrice = marketData?.[symbol]
@@ -310,53 +141,40 @@ export default function PortfolioPage() {
     const fallback = fallbackData[symbol]
     const lastMarketPrice = lastMarketPrices?.[symbol]
 
-    console.log(`🔍 DEBUG - getBestPriceData for ${symbol}:`, {
-      livePrice,
-      marketPrice,
-      directPrice,
-      fallback,
-      lastMarketPrice,
-      marketStatus: marketStatus?.isOpen,
-      isLive,
-    })
-
-    // 1. Prefer live WebSocket data (only available when market is open)
-    if (livePrice && livePrice.isLive && livePrice.price > 0) {
-      console.log(`✅ ${symbol}: Using live price: $${livePrice.price}`)
+    // 1. Prefer live WebSocket data
+    if (livePrice?.isLive && safeNumber(livePrice.price) > 0) {
       return {
-        price: livePrice.price,
-        change: livePrice.change,
-        changePercent: livePrice.changePercent,
+        price: safeNumber(livePrice.price),
+        change: safeNumber(livePrice.change),
+        changePercent: safeNumber(livePrice.changePercent),
         isLive: true,
         ageLabel: 'Live',
         showAsStale: false,
         dataAge: 'live',
-        timestamp: livePrice.timestamp,
+        timestamp: safeNumber(livePrice.timestamp, Date.now()),
       }
     }
 
-    // 2. Use market-aware data (respects market hours)
-    if (marketPrice && marketPrice.c > 0) {
-      console.log(`✅ ${symbol}: Using market data: $${marketPrice.c}`)
+    // 2. Use market-aware data
+    if (marketPrice?.c && safeNumber(marketPrice.c) > 0) {
       return {
-        price: marketPrice.c,
-        change: marketPrice.d || 0,
-        changePercent: marketPrice.dp || 0,
+        price: safeNumber(marketPrice.c),
+        change: safeNumber(marketPrice.d),
+        changePercent: safeNumber(marketPrice.dp),
         isLive: isLive,
         ageLabel: isLive ? 'API Live' : 'Last Close',
         showAsStale: !isLive,
         dataAge: isLive ? 'recent' : 'closed',
-        timestamp: marketLastUpdate,
+        timestamp: safeNumber(marketLastUpdate, Date.now()),
       }
     }
 
     // 3. Use direct API data
-    if (directPrice && directPrice.c > 0) {
-      console.log(`✅ ${symbol}: Using direct API price: $${directPrice.c}`)
+    if (directPrice?.c && safeNumber(directPrice.c) > 0) {
       return {
-        price: directPrice.c,
-        change: directPrice.d || 0,
-        changePercent: directPrice.dp || 0,
+        price: safeNumber(directPrice.c),
+        change: safeNumber(directPrice.d),
+        changePercent: safeNumber(directPrice.dp),
         isLive: false,
         ageLabel: marketStatus?.isOpen ? 'API Live' : 'Last Close',
         showAsStale: false,
@@ -365,57 +183,51 @@ export default function PortfolioPage() {
       }
     }
 
-    // 4. ✅ Use lastMarketPrices (this should work when market is closed)
+    // 4. Use lastMarketPrices
     if (lastMarketPrice) {
-      console.log(`✅ ${symbol}: Using last market price:`, lastMarketPrice)
-
-      // Handle both array format [timestamp, price] and object format
-      if (Array.isArray(lastMarketPrice) && lastMarketPrice.length >= 2 && lastMarketPrice[1] > 0) {
-        const ageInMs = Date.now() - lastMarketPrice[0]
-        const ageInHours = ageInMs / (1000 * 60 * 60)
-
-        return {
-          price: lastMarketPrice[1],
-          change: 0,
-          changePercent: 0,
-          isLive: false,
-          ageLabel: 'Last Close',
-          showAsStale: false,
-          dataAge: 'last_market',
-          timestamp: lastMarketPrice[0],
+      if (Array.isArray(lastMarketPrice) && lastMarketPrice.length >= 2) {
+        const price = safeNumber(lastMarketPrice[1])
+        if (price > 0) {
+          return {
+            price,
+            change: 0,
+            changePercent: 0,
+            isLive: false,
+            ageLabel: 'Last Close',
+            showAsStale: false,
+            dataAge: 'last_market',
+            timestamp: safeNumber(lastMarketPrice[0], Date.now()),
+          }
         }
-      } else if (lastMarketPrice.price && lastMarketPrice.price > 0) {
-        // Object format: { symbol, price, change, changePercent, timestamp }
+      } else if (lastMarketPrice.price && safeNumber(lastMarketPrice.price) > 0) {
         return {
-          price: lastMarketPrice.price,
-          change: lastMarketPrice.change || 0,
-          changePercent: lastMarketPrice.changePercent || 0,
+          price: safeNumber(lastMarketPrice.price),
+          change: safeNumber(lastMarketPrice.change),
+          changePercent: safeNumber(lastMarketPrice.changePercent),
           isLive: false,
           ageLabel: 'Last Close',
           showAsStale: false,
           dataAge: 'last_market',
-          timestamp: lastMarketPrice.timestamp || 0,
+          timestamp: safeNumber(lastMarketPrice.timestamp, Date.now()),
         }
       }
     }
 
-    // 5. Fallback to existing fallback data
-    if (fallback && fallback.price > 0) {
-      console.log(`✅ ${symbol}: Using fallback data: $${fallback.price}`)
+    // 5. Fallback data
+    if (fallback?.price && safeNumber(fallback.price) > 0) {
       return {
-        price: fallback.price,
-        change: fallback.change,
-        changePercent: fallback.changePercent,
+        price: safeNumber(fallback.price),
+        change: safeNumber(fallback.change),
+        changePercent: safeNumber(fallback.changePercent),
         isLive: false,
         ageLabel: 'Cached',
         showAsStale: true,
         dataAge: 'fallback',
-        timestamp: fallback.timestamp,
+        timestamp: safeNumber(fallback.timestamp, Date.now()),
       }
     }
 
     // 6. No data available
-    console.log(`❌ ${symbol}: No data available`)
     return {
       price: 0,
       change: 0,
@@ -428,7 +240,7 @@ export default function PortfolioPage() {
     }
   }
 
-  // Handle position click to navigate to stock detail
+  // Handle position click
   const handlePositionClick = (position: Position) => {
     router.push(`/portfolio/${position.ticker}`)
   }
@@ -439,12 +251,12 @@ export default function PortfolioPage() {
   }
 
   useEffect(() => {
-    if (!user) return // ⬅️ wait until Firebase user is ready
+    if (!user) return
     fetchPositions(true).then(() => setLastUpdate(new Date()))
   }, [user, fetchPositions])
 
   useEffect(() => {
-    if (!user) return // ⬅️ same guard
+    if (!user) return
     if (!marketStatus?.isOpen) return
 
     const interval = setInterval(async () => {
@@ -460,18 +272,10 @@ export default function PortfolioPage() {
 
     try {
       setIsRefreshing(true)
-      console.log('🔄 Manual refresh triggered')
 
       if (marketStatus?.isOpen) {
-        // Market is open - refresh everything
-        await Promise.all([
-          refresh(), // Market-aware refresh
-          fetchPositions(true),
-          fetchFallbackData(symbols),
-        ])
+        await Promise.all([refresh(), fetchPositions(true)])
       } else {
-        // Market is closed - only refresh positions from database
-        console.log('🔒 Market closed - only refreshing database positions')
         await fetchPositions(true)
       }
 
@@ -483,7 +287,7 @@ export default function PortfolioPage() {
     }
   }
 
-  // Calculate live portfolio stats
+  // ✅ Enhanced portfolio stats calculation with safe math
   const livePortfolioStats = useMemo(() => {
     if (!positions || positions.length === 0) {
       return {
@@ -499,46 +303,49 @@ export default function PortfolioPage() {
 
     positions.forEach((position: Position) => {
       const bestPrice = getBestPriceData(position.ticker)
-      const currentPrice = bestPrice.price || position.currentPrice || position.averagePrice
 
-      totalCost += position.totalCost
-      totalValue += position.totalShares * currentPrice
+      // ✅ Use safe number conversion for all calculations
+      const shares = safeNumber(position.totalShares)
+      const avgPrice = safeNumber(position.averagePrice)
+      const currentPrice = safeNumber(bestPrice.price) || avgPrice // Fallback to avg price
+      const cost = safeNumber(position.totalCost)
 
-      console.log(`💰 Portfolio calc for ${position.ticker}:`, {
-        shares: position.totalShares,
-        bestPrice: bestPrice.price,
+      // ✅ Safe calculations
+      const positionCost = cost || shares * avgPrice // Calculate if missing
+      const positionValue = shares * currentPrice
+
+      totalCost += positionCost
+      totalValue += positionValue
+
+      console.log(`💰 Safe calc for ${position.ticker}:`, {
+        shares,
+        avgPrice,
         currentPrice,
-        avgPrice: position.averagePrice,
-        cost: position.totalCost,
-        value: position.totalShares * currentPrice,
+        cost: positionCost,
+        value: positionValue,
       })
     })
 
-    console.log(`💰 Total Portfolio Stats:`, {
-      totalValue,
-      totalCost,
-      totalUnrealizedPnL: totalValue - totalCost,
-      totalPositions: positions.length,
-    })
+    // ✅ Final safe calculations
+    const unrealizedPnL = safeCalculation(() => totalValue - totalCost)
 
     return {
-      totalValue,
-      totalCost,
-      totalUnrealizedPnL: totalValue - totalCost,
+      totalValue: safeNumber(totalValue),
+      totalCost: safeNumber(totalCost),
+      totalUnrealizedPnL: unrealizedPnL,
       totalPositions: positions.length,
     }
   }, [positions, prices, marketData, directPrices, fallbackData, lastMarketPrices])
 
-  // ✅ Fixed watchlist functions with proper async/await
+  // Watchlist functions
   const handleAddFolder = async () => {
     if (!newFolderName.trim()) return
     try {
       await addFolder(newFolderName.trim())
       setNewFolderName('')
       setShowAddFolder(false)
-      console.log('✅ Folder added successfully')
     } catch (error) {
-      console.error('❌ Failed to add folder:', error)
+      console.error('Failed to add folder:', error)
     }
   }
 
@@ -546,13 +353,11 @@ export default function PortfolioPage() {
     try {
       await renameFolder(folderId, newName)
       setEditingFolder(null)
-      console.log('✅ Folder renamed successfully')
     } catch (error) {
-      console.error('❌ Failed to rename folder:', error)
+      console.error('Failed to rename folder:', error)
     }
   }
 
-  // ✅ Enhanced drag and drop functions with touch support
   const handleDragStart = (item: any, fromFolderId: string) => {
     setDraggedItem({ item, fromFolderId })
   }
@@ -572,94 +377,21 @@ export default function PortfolioPage() {
     try {
       await moveItemBetweenFolders(draggedItem.fromFolderId, toFolderId, draggedItem.item.id)
       setDraggedItem(null)
-      console.log('✅ Item moved successfully')
     } catch (error) {
-      console.error('❌ Failed to move item:', error)
+      console.error('Failed to move item:', error)
       setDraggedItem(null)
     }
   }
 
-  // ✅ Touch support for mobile drag and drop
-  const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragOverFolder, setDragOverFolder] = useState<string | null>(null)
-
-  const handleTouchStart = (e: React.TouchEvent, item: any, fromFolderId: string) => {
-    const touch = e.touches[0]
-    setTouchStartPos({ x: touch.clientX, y: touch.clientY })
-    setDraggedItem({ item, fromFolderId })
-  }
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!touchStartPos || !draggedItem) return
-
-    const touch = e.touches[0]
-    const deltaX = Math.abs(touch.clientX - touchStartPos.x)
-    const deltaY = Math.abs(touch.clientY - touchStartPos.y)
-
-    // Start dragging if moved more than 10px
-    if (deltaX > 10 || deltaY > 10) {
-      setIsDragging(true)
-      e.preventDefault() // Prevent scrolling while dragging
-
-      // Find element under touch point
-      const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY)
-      const folderElement = elementBelow?.closest('[data-folder-id]')
-
-      if (folderElement) {
-        const folderId = folderElement.getAttribute('data-folder-id')
-        setDragOverFolder(folderId)
-      } else {
-        setDragOverFolder(null)
-      }
-    }
-  }
-
-  const handleTouchEnd = async (e: React.TouchEvent) => {
-    if (!isDragging || !draggedItem || !dragOverFolder) {
-      setTouchStartPos(null)
-      setIsDragging(false)
-      setDragOverFolder(null)
-      setDraggedItem(null)
-      return
-    }
-
-    // Perform the move
-    if (dragOverFolder !== draggedItem.fromFolderId) {
-      try {
-        await moveItemBetweenFolders(draggedItem.fromFolderId, dragOverFolder, draggedItem.item.id)
-        console.log('✅ Touch drag: Item moved successfully')
-      } catch (error) {
-        console.error('❌ Touch drag: Failed to move item:', error)
-      }
-    }
-
-    // Reset states
-    setTouchStartPos(null)
-    setIsDragging(false)
-    setDragOverFolder(null)
-    setDraggedItem(null)
-  }
-
-  // ✅ Fixed handleAddStock with proper validation
   const handleAddStock = async (stock: any, folderId: string) => {
-    console.log('🐛 handleAddStock called with:', { stock, folderId, folders })
-
-    // ✅ Validate inputs
-    if (!folderId) {
-      console.error('❌ No folder ID provided')
+    if (!folderId || !stock.ticker) {
+      console.error('Invalid input for adding stock')
       return
     }
 
-    if (!stock.ticker) {
-      console.error('❌ No ticker provided')
-      return
-    }
-
-    // ✅ Check if folder exists
     const folder = folders.find((f) => f.id === folderId)
     if (!folder) {
-      console.error('❌ Folder not found:', folderId)
+      console.error('Folder not found:', folderId)
       return
     }
 
@@ -669,9 +401,8 @@ export default function PortfolioPage() {
         company: stock.company,
         logo: stock.logo,
       })
-      console.log('✅ Stock added successfully')
     } catch (error) {
-      console.error('❌ Failed to add stock:', error)
+      console.error('Failed to add stock:', error)
     }
   }
 
@@ -721,66 +452,6 @@ export default function PortfolioPage() {
           </div>
         )}
 
-        {/* Connection Status */}
-        <div className='flex items-center justify-between text-xs theme-text-secondary'>
-          <div className='flex items-center gap-2'>
-            {marketStatus?.isOpen ? (
-              isConnected ? (
-                <>
-                  <Wifi className='w-3 h-3 text-green-500' />
-                  <span className='text-green-500'>Live Data</span>
-                </>
-              ) : (
-                <>
-                  <WifiOff className='w-3 h-3 text-yellow-500' />
-                  <span className='text-yellow-500'>API Only</span>
-                </>
-              )
-            ) : (
-              <>
-                <AlertCircle className='w-3 h-3 text-gray-500' />
-                <span className='text-gray-500'>Market Closed - Last Prices</span>
-              </>
-            )}
-          </div>
-          <div className='flex items-center gap-2'>
-            {/* Show last update time */}
-            {marketLastUpdate > 0 && (
-              <span>
-                Last: {new Date(marketLastUpdate).toLocaleTimeString()}
-                {!marketStatus?.isOpen && ' (Close)'}
-              </span>
-            )}
-            <button
-              onClick={handleRefreshPrices}
-              className='p-1 rounded text-xs bg-blue-500/20 hover:bg-blue-500/40 transition-colors'
-              disabled={isRefreshing}
-            >
-              <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-        </div>
-
-        {/* Loading States */}
-        {(isLoadingPositions || watchlistLoading) && (
-          <div className='flex items-center justify-center p-4'>
-            <Loader2 className='w-5 h-5 animate-spin text-blue-500' />
-            <span className='ml-2 text-sm text-gray-400'>
-              Loading {isLoadingPositions ? 'portfolio' : 'watchlist'}...
-            </span>
-          </div>
-        )}
-
-        {/* Error States */}
-        {(error || watchlistError) && (
-          <div className='bg-red-500/10 border border-red-500/20 rounded-lg p-3'>
-            <div className='flex items-center gap-2 text-red-400 text-sm'>
-              <AlertCircle className='w-4 h-4' />
-              {error || watchlistError}
-            </div>
-          </div>
-        )}
-
         {/* Portfolio Tab Content */}
         {activeTab === 'portfolio' && (
           <>
@@ -799,24 +470,18 @@ export default function PortfolioPage() {
               <div className='theme-card p-4'>
                 <div className='flex items-center justify-between mb-4'>
                   <h3 className='text-lg font-semibold theme-text-primary'>Portfolio Summary</h3>
-                  <div className='flex items-center gap-2'>
-                    {marketStatus?.isOpen && isConnected && (
-                      <div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>
-                    )}
-                    {!marketStatus?.isOpen && <div className='w-2 h-2 bg-gray-500 rounded-full'></div>}
-                    <button
-                      onClick={handleRefreshPrices}
-                      className='p-2 theme-text-secondary hover:theme-text-primary transition-colors'
-                      disabled={isRefreshing}
-                    >
-                      <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleRefreshPrices}
+                    className='p-2 theme-text-secondary hover:theme-text-primary transition-colors'
+                    disabled={isRefreshing}
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  </button>
                 </div>
 
                 <div className='grid grid-cols-2 gap-4'>
                   <div className='text-center'>
-                    <div className='text-2xl font-bold theme-text-primary'>${safeStats.totalValue.toFixed(2)}</div>
+                    <div className='text-2xl font-bold theme-text-primary'>${safeToFixed(safeStats.totalValue)}</div>
                     <div className='text-sm theme-text-secondary'>Current Value</div>
                   </div>
                   <div className='text-center'>
@@ -825,7 +490,8 @@ export default function PortfolioPage() {
                         safeStats.totalUnrealizedPnL >= 0 ? 'text-green-400' : 'text-red-400'
                       }`}
                     >
-                      {safeStats.totalUnrealizedPnL >= 0 ? '+' : ''}${safeStats.totalUnrealizedPnL.toFixed(2)}
+                      {safeStats.totalUnrealizedPnL >= 0 ? '+' : ''}$
+                      {safeToFixed(Math.abs(safeStats.totalUnrealizedPnL))}
                     </div>
                     <div className='text-sm theme-text-secondary'>Unrealized P&L</div>
                   </div>
@@ -843,13 +509,20 @@ export default function PortfolioPage() {
               ) : (
                 safePositions.map((position: Position) => {
                   const bestPrice = getBestPriceData(position.ticker)
-                  const currentPrice = bestPrice.price || position.currentPrice || position.averagePrice
-                  const isLiveData = bestPrice.isLive
 
-                  // Calculate live P&L
-                  const currentValue = position.totalShares * currentPrice
-                  const unrealizedPnL = currentValue - position.totalCost
-                  const unrealizedPnLPercent = position.totalCost > 0 ? (unrealizedPnL / position.totalCost) * 100 : 0
+                  // ✅ Safe calculations for position
+                  const shares = safeNumber(position.totalShares)
+                  const avgPrice = safeNumber(position.averagePrice)
+                  const currentPrice = safeNumber(bestPrice.price) || avgPrice
+                  const totalCost = safeNumber(position.totalCost) || shares * avgPrice
+
+                  const currentValue = safeCalculation(() => shares * currentPrice)
+                  const unrealizedPnL = safeCalculation(() => currentValue - totalCost)
+                  const unrealizedPnLPercent = safeCalculation(() =>
+                    totalCost > 0 ? (unrealizedPnL / totalCost) * 100 : 0
+                  )
+
+                  const isLiveData = bestPrice.isLive
 
                   return (
                     <div
@@ -880,12 +553,6 @@ export default function PortfolioPage() {
                               {isLiveData && marketStatus?.isOpen && (
                                 <div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>
                               )}
-                              {!isLiveData && !marketStatus?.isOpen && (
-                                <div className='w-2 h-2 bg-gray-500 rounded-full'></div>
-                              )}
-                              {!isLiveData && marketStatus?.isOpen && bestPrice.dataAge === 'fallback' && (
-                                <div className='w-2 h-2 bg-blue-500 rounded-full'></div>
-                              )}
                             </div>
                             <div className='text-sm theme-text-secondary truncate'>{position.company}</div>
                           </div>
@@ -903,12 +570,12 @@ export default function PortfolioPage() {
                               <TrendingDown className='w-4 h-4' />
                             )}
                             <span className='font-medium'>
-                              {unrealizedPnL >= 0 ? '+' : ''}${Math.abs(unrealizedPnL).toFixed(2)}
+                              {unrealizedPnL >= 0 ? '+' : ''}${safeToFixed(Math.abs(unrealizedPnL))}
                             </span>
                           </div>
                           <div className={`text-xs ${unrealizedPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             {unrealizedPnL >= 0 ? '+' : ''}
-                            {Math.abs(unrealizedPnLPercent).toFixed(2)}%
+                            {safeToFixed(Math.abs(unrealizedPnLPercent))}%
                           </div>
                         </div>
                       </div>
@@ -916,13 +583,11 @@ export default function PortfolioPage() {
                       <div className='grid grid-cols-3 gap-4 text-sm'>
                         <div>
                           <div className='theme-text-secondary'>Shares</div>
-                          <div className='theme-text-primary font-medium'>
-                            {Number(position.totalShares).toFixed(2)}
-                          </div>
+                          <div className='theme-text-primary font-medium'>{toFixed(shares, 2)}</div>
                         </div>
                         <div>
                           <div className='theme-text-secondary'>Avg Price</div>
-                          <div className='theme-text-primary font-medium'>${safeToFixed(position.averagePrice)}</div>
+                          <div className='theme-text-primary font-medium'>${safeToFixed(avgPrice)}</div>
                         </div>
                         <div>
                           <div className='theme-text-secondary'>Current</div>
@@ -935,31 +600,14 @@ export default function PortfolioPage() {
                                 : 'theme-text-primary'
                             }`}
                           >
-                            ${toFixed(currentPrice, 2)}
+                            ${safeToFixed(currentPrice)}
                           </div>
                         </div>
                       </div>
 
                       <div className='mt-3 pt-3 border-t border-gray-700 flex justify-between text-xs theme-text-secondary'>
-                        <span>Cost: ${Number(position.totalCost ?? 0).toFixed(2)}</span>
-                        <span>Value: ${(currentValue || 0).toFixed(2)}</span>
-                      </div>
-
-                      {/* Show status based on data source */}
-                      <div className='mt-1 text-xs text-center'>
-                        <span
-                          className={`${
-                            bestPrice.isLive
-                              ? 'text-green-400'
-                              : bestPrice.showAsStale
-                              ? 'text-gray-400'
-                              : 'text-blue-400'
-                          }`}
-                        >
-                          {bestPrice.ageLabel}
-                          {bestPrice.timestamp > 0 && ` • ${new Date(bestPrice.timestamp).toLocaleTimeString()}`}
-                          {!marketStatus?.isOpen && ' (Market Closed)'}
-                        </span>
+                        <span>Cost: ${safeToFixed(totalCost)}</span>
+                        <span>Value: ${safeToFixed(currentValue)}</span>
                       </div>
                     </div>
                   )
@@ -969,7 +617,7 @@ export default function PortfolioPage() {
           </>
         )}
 
-        {/* Watchlist Tab Content */}
+        {/* Watchlist Tab Content - Keep existing implementation */}
         {activeTab === 'watchlist' && (
           <div className='space-y-4'>
             {/* Mobile Drag Indicator */}

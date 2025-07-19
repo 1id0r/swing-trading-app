@@ -1,11 +1,11 @@
-// src/app/history/page.tsx - Updated with delete functionality
+// src/app/history/page.tsx - Updated with expandable cards
 'use client'
 
 import { useEffect } from 'react'
 import { MobileLayout } from '@/components/layout/MobileLayout'
-import { TradeCard } from '@/components/trade/TradeCard'
+import { ExpandableTradeCard } from '@/components/trade/ExpandableTradeCard'
 import { useTradeStore } from '@/stores/useTradeStore'
-import { Search, Trash2 } from 'lucide-react'
+import { Search, Trash2, TrendingUp, TrendingDown, DollarSign, Hash, ChevronDown, ChevronUp } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { useAuth } from '@/app/contexts/AuthContext'
 import { toFixed } from '@/lib/format'
@@ -16,10 +16,11 @@ export default function HistoryPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filter, setFilter] = useState<'ALL' | 'BUY' | 'SELL'>('ALL')
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [expandAll, setExpandAll] = useState(false)
 
   // Fetch trades when component mounts
   useEffect(() => {
-    if (!user) return // ⬅️ guard
+    if (!user) return
     fetchTrades()
   }, [fetchTrades, user])
 
@@ -37,35 +38,32 @@ export default function HistoryPage() {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   }, [trades, searchTerm, filter])
 
-  // right after filteredTrades
-  const totalValue = useMemo(
-    () => filteredTrades.reduce((sum, t) => sum + (t.totalValue ?? t.shares * t.pricePerShare), 0),
-    [filteredTrades]
-  )
+  // Summary calculations
+  const summary = useMemo(() => {
+    const totalValue = filteredTrades.reduce((sum, t) => sum + (t.totalValue ?? t.shares * t.pricePerShare), 0)
+    const totalProfit = filteredTrades.reduce((sum, t) => sum + (t.netProfit ?? 0), 0)
+    const buyTrades = filteredTrades.filter((t) => t.action === 'BUY').length
+    const sellTrades = filteredTrades.filter((t) => t.action === 'SELL').length
+
+    return { totalValue, totalProfit, buyTrades, sellTrades }
+  }, [filteredTrades])
 
   const handleDeleteTrade = async (tradeId: string) => {
     try {
       setDeleteError(null)
       await deleteTrade(tradeId)
-
-      // Show success message briefly
-      // You could implement a toast notification here instead
       console.log('✅ Trade deleted successfully')
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete trade'
       setDeleteError(errorMessage)
       console.error('❌ Failed to delete trade:', error)
-
-      // Clear error after 5 seconds
       setTimeout(() => setDeleteError(null), 5000)
     }
   }
 
   const handleEditTrade = (trade: any) => {
-    // TODO: Implement edit functionality
-    // This could navigate to an edit page or open a modal
     console.log('Edit trade:', trade)
-    // For now, just log - you can implement this later
+    // TODO: Implement edit functionality
   }
 
   return (
@@ -87,53 +85,115 @@ export default function HistoryPage() {
 
         {/* Loading State */}
         {isLoading && (
-          <div className='theme-card p-8'>
+          <div className='theme-card p-6'>
             <div className='text-center'>
-              <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2'></div>
-              <p className='theme-text-secondary'>Loading trades...</p>
+              <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2'></div>
+              <p className='theme-text-secondary text-sm'>Loading trades...</p>
             </div>
           </div>
         )}
 
-        {/* Search and Filter */}
+        {/* Compact Summary Stats */}
+        {!isLoading && filteredTrades.length > 0 && (
+          <div className='grid grid-cols-2 gap-3'>
+            <div className='theme-card p-3'>
+              <div className='flex items-center gap-2 mb-1'>
+                <Hash className='w-4 h-4 theme-text-secondary' />
+                <span className='theme-text-secondary text-xs'>Trades</span>
+              </div>
+              <div className='theme-text-primary font-semibold'>{filteredTrades.length}</div>
+              <div className='text-xs theme-text-secondary'>
+                {summary.buyTrades} BUY • {summary.sellTrades} SELL
+              </div>
+            </div>
+
+            <div className='theme-card p-3'>
+              <div className='flex items-center gap-2 mb-1'>
+                <DollarSign className='w-4 h-4 theme-text-secondary' />
+                <span className='theme-text-secondary text-xs'>Total Value</span>
+              </div>
+              <div className='theme-text-primary font-semibold'>${toFixed(summary.totalValue)}</div>
+              {summary.totalProfit !== 0 && (
+                <div
+                  className={`text-xs flex items-center gap-1 ${
+                    summary.totalProfit >= 0 ? 'text-green-400' : 'text-red-400'
+                  }`}
+                >
+                  {summary.totalProfit >= 0 ? <TrendingUp className='w-3 h-3' /> : <TrendingDown className='w-3 h-3' />}
+                  {summary.totalProfit >= 0 ? '+' : ''}${toFixed(summary.totalProfit)}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Search and Filter Controls */}
         {!isLoading && (
           <div className='space-y-3'>
             <div className='relative'>
-              <Search className='absolute left-3 top-3 w-4 h-4 theme-text-secondary' />
+              <Search className='absolute left-3 top-2.5 w-4 h-4 theme-text-secondary' />
               <input
                 type='text'
                 placeholder='Search trades...'
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className='w-full theme-card rounded-lg p-3 pl-10 theme-text-primary placeholder-gray-400 focus:border-blue-500 focus:outline-none'
+                className='w-full theme-input text-sm py-2 pl-10 pr-4'
               />
             </div>
 
-            <div className='flex gap-2'>
-              {(['ALL', 'BUY', 'SELL'] as const).map((filterOption) => (
+            {/* Filter Buttons + Expand All Control */}
+            <div className='flex items-center justify-between gap-2'>
+              <div className='flex gap-2'>
+                {(['ALL', 'BUY', 'SELL'] as const).map((filterOption) => (
+                  <button
+                    key={filterOption}
+                    onClick={() => setFilter(filterOption)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      filter === filterOption
+                        ? 'bg-blue-600 text-white'
+                        : 'theme-card theme-text-secondary hover:theme-text-primary'
+                    }`}
+                  >
+                    {filterOption}
+                    {filterOption !== 'ALL' && (
+                      <span className='ml-1 opacity-70'>
+                        ({filterOption === 'BUY' ? summary.buyTrades : summary.sellTrades})
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Expand/Collapse All */}
+              {filteredTrades.length > 0 && (
                 <button
-                  key={filterOption}
-                  onClick={() => setFilter(filterOption)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    filter === filterOption
-                      ? 'bg-blue-600 theme-text-primary'
-                      : 'theme-card theme-text-secondary hover:theme-text-primary'
-                  }`}
+                  onClick={() => setExpandAll(!expandAll)}
+                  className='flex items-center gap-1 px-3 py-1.5 theme-card theme-text-secondary hover:theme-text-primary rounded-lg text-xs font-medium transition-colors'
                 >
-                  {filterOption}
+                  {expandAll ? (
+                    <>
+                      <ChevronUp className='w-3 h-3' />
+                      Collapse All
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className='w-3 h-3' />
+                      Expand All
+                    </>
+                  )}
                 </button>
-              ))}
+              )}
             </div>
           </div>
         )}
 
-        {/* Trade List */}
+        {/* Expandable Trade List */}
         {!isLoading && (
-          <div className='space-y-3'>
+          <div className='space-y-2'>
             {filteredTrades.length === 0 ? (
-              <div className='text-center py-12'>
-                <div className='theme-text-secondary mb-2'>No trades found</div>
-                <div className='text-sm theme-text-secondary'>
+              <div className='text-center py-8'>
+                <div className='theme-text-secondary mb-2 text-sm'>No trades found</div>
+                <div className='text-xs theme-text-secondary'>
                   {!trades || trades.length === 0
                     ? 'Add your first trade to get started'
                     : 'Try adjusting your search or filter'}
@@ -141,28 +201,15 @@ export default function HistoryPage() {
               </div>
             ) : (
               filteredTrades.map((trade) => (
-                <TradeCard key={trade.id} trade={trade} onEdit={handleEditTrade} onDelete={handleDeleteTrade} />
+                <ExpandableTradeCard
+                  key={trade.id}
+                  trade={trade}
+                  onEdit={handleEditTrade}
+                  onDelete={handleDeleteTrade}
+                  defaultExpanded={expandAll}
+                />
               ))
             )}
-          </div>
-        )}
-
-        {/* Summary Stats */}
-        {!isLoading && filteredTrades.length > 0 && (
-          <div className='theme-card p-4 mt-6'>
-            <h4 className='text-sm font-semibold theme-text-primary mb-3'>
-              {filter === 'ALL' ? 'All Trades' : `${filter} Trades`} Summary
-            </h4>
-            <div className='grid grid-cols-2 gap-4 text-sm'>
-              <div>
-                <span className='theme-text-secondary'>Total Trades:</span>
-                <span className='theme-text-primary font-medium ml-2'>{filteredTrades.length}</span>
-              </div>
-              <div>
-                <span className='theme-text-secondary'>Total Value:</span>
-                <span className='theme-text-primary font-medium ml-2'>${toFixed(totalValue)}</span>
-              </div>
-            </div>
           </div>
         )}
       </div>

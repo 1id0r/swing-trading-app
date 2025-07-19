@@ -43,76 +43,36 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  
+/* Theme Variables - Keep existing ones */
+:root {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+}
+
+.light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-} */
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+}
 
+.oled {
+  --bg-primary: #000000;
+  --bg-secondary: #111111;
+  --text-primary: #ffffff;
+  --text-secondary: #888888;
+}
+
+/* Keep ALL existing theme classes - these are critical for your app */
 .theme-bg-primary {
   background-color: var(--bg-primary);
 }
@@ -143,16 +103,13 @@
   border: 1px solid var(--text-secondary);
   border-opacity: 0.15;
   border-radius: 16px;
-  /* Futuristic rounded */
   position: relative;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .theme-input {
-  background: linear-gradient(135deg,
-      var(--bg-secondary) 0%,
-      rgba(59, 130, 246, 0.03) 100%);
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(59, 130, 246, 0.03) 100%);
   border: 1.5px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   color: var(--text-primary);
@@ -171,9 +128,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg,
-      rgba(59, 130, 246, 0.05) 0%,
-      transparent 100%);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
@@ -185,10 +140,7 @@
 
 .theme-input:focus {
   border-color: #3b82f6;
-  box-shadow:
-    0 0 0 3px rgba(59, 130, 246, 0.1),
-    0 4px 16px rgba(59, 130, 246, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 4px 16px rgba(59, 130, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   outline: none;
   transform: translateY(-1px);
 }
@@ -202,359 +154,6 @@
   color: var(--text-secondary);
   opacity: 0.6;
   font-weight: 400;
-}
-
-/* Enhanced input styling for number inputs */
-.theme-input[type="number"] {
-  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-  letter-spacing: 0.025em;
-}
-
-/* Remove default number input arrows */
-.theme-input[type="number"]::-webkit-outer-spin-button,
-.theme-input[type="number"]::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-.theme-input[type="number"] {
-  -moz-appearance: textfield;
-}
-
-/* Special styling for inputs with icons */
-.theme-input.pl-12 {
-  padding-left: 48px;
-}
-
-/* Light theme adjustments */
-.light .theme-input {
-  background: linear-gradient(135deg,
-      var(--bg-secondary) 0%,
-      rgba(59, 130, 246, 0.02) 100%);
-  border-color: rgba(0, 0, 0, 0.1);
-}
-
-.light .theme-input:focus {
-  box-shadow:
-    0 0 0 3px rgba(59, 130, 246, 0.08),
-    0 4px 16px rgba(59, 130, 246, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-}
-
-.futuristic-action-button {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px 16px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  background: linear-gradient(135deg,
-      var(--bg-secondary) 0%,
-      rgba(59, 130, 246, 0.03) 100%);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-  min-height: 80px;
-}
-
-.futuristic-action-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg,
-      rgba(59, 130, 246, 0.1) 0%,
-      transparent 100%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.futuristic-action-button:hover::before {
-  opacity: 1;
-}
-
-.futuristic-action-button:hover {
-  border-color: rgba(59, 130, 246, 0.4);
-  transform: translateY(-2px) scale(1.02);
-  box-shadow:
-    0 8px 24px rgba(59, 130, 246, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-/* BUY Button Active State */
-.futuristic-action-button.buy-active {
-  border-color: #10b981;
-  background: linear-gradient(135deg,
-      rgba(16, 185, 129, 0.1) 0%,
-      rgba(16, 185, 129, 0.05) 100%);
-  color: #10b981;
-  transform: translateY(-3px) scale(1.05);
-  box-shadow:
-    0 12px 28px rgba(16, 185, 129, 0.25),
-    0 4px 12px rgba(16, 185, 129, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-.futuristic-action-button.buy-active::after {
-  content: '';
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 8px;
-  height: 8px;
-  background: #10b981;
-  border-radius: 50%;
-  box-shadow: 0 0 12px #10b981;
-}
-
-/* SELL Button Active State */
-.futuristic-action-button.sell-active {
-  border-color: #ef4444;
-  background: linear-gradient(135deg,
-      rgba(239, 68, 68, 0.1) 0%,
-      rgba(239, 68, 68, 0.05) 100%);
-  color: #ef4444;
-  transform: translateY(-3px) scale(1.05);
-  box-shadow:
-    0 12px 28px rgba(239, 68, 68, 0.25),
-    0 4px 12px rgba(239, 68, 68, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-.futuristic-action-button.sell-active::after {
-  content: '';
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 8px;
-  height: 8px;
-  background: #ef4444;
-  border-radius: 50%;
-  box-shadow: 0 0 12px #ef4444;
-}
-
-/* Enhanced Form Section Styling */
-.trade-form-section {
-  background: var(--bg-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  padding: 24px;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.trade-form-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg,
-      rgba(59, 130, 246, 0.02) 0%,
-      transparent 100%);
-  pointer-events: none;
-}
-
-.trade-form-section:hover {
-  border-color: rgba(59, 130, 246, 0.2);
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1);
-}
-
-/* Trade Summary Special Styling */
-.trade-summary-card {
-  background: linear-gradient(135deg,
-      rgba(59, 130, 246, 0.05) 0%,
-      rgba(59, 130, 246, 0.02) 100%);
-  border: 1.5px solid rgba(59, 130, 246, 0.2);
-  border-radius: 24px;
-  padding: 24px;
-  position: relative;
-  overflow: hidden;
-}
-
-.trade-summary-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg,
-      rgba(59, 130, 246, 0.1) 0%,
-      transparent 50%,
-      rgba(59, 130, 246, 0.05) 100%);
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-.trade-summary-card .summary-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
-  transition: all 0.3s ease;
-}
-
-.trade-summary-card .summary-row:hover {
-  background: rgba(59, 130, 246, 0.05);
-  margin: 0 -12px;
-  padding: 12px;
-  border-radius: 12px;
-}
-
-.trade-summary-card .summary-row:last-child {
-  border-bottom: none;
-  font-weight: 700;
-  font-size: 1.1em;
-}
-
-/* Enhanced Input Focus States */
-.theme-input:focus {
-  border-color: #3b82f6;
-  box-shadow:
-    0 0 0 3px rgba(59, 130, 246, 0.1),
-    0 4px 16px rgba(59, 130, 246, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  outline: none;
-  transform: translateY(-1px);
-}
-
-/* Date Input Special Styling */
-.theme-input[type="date"] {
-  color-scheme: dark;
-  font-family: inherit;
-}
-
-.light .theme-input[type="date"] {
-  color-scheme: light;
-}
-
-/* Disabled Button Styling */
-.theme-button-primary:disabled {
-  background: rgba(107, 114, 128, 0.5) !important;
-  border-color: rgba(107, 114, 128, 0.3) !important;
-  color: rgba(156, 163, 175, 0.8) !important;
-  cursor: not-allowed !important;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-.theme-button-primary:disabled::before {
-  display: none !important;
-}
-
-.theme-button-primary:disabled:hover {
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-/* Error Message Styling */
-.form-error {
-  color: #ef4444;
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-top: 6px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.form-error::before {
-  content: '⚠';
-  font-size: 0.75rem;
-}
-
-/* Mobile Responsive Adjustments */
-@media (max-width: 768px) {
-  .futuristic-action-button {
-    padding: 16px 12px;
-    min-height: 70px;
-    border-radius: 18px;
-  }
-
-  .trade-form-section {
-    padding: 20px;
-    border-radius: 20px;
-  }
-
-  .trade-summary-card {
-    padding: 20px;
-    border-radius: 20px;
-  }
-
-  .theme-input {
-    padding: 12px 16px;
-    border-radius: 14px;
-  }
-
-  .theme-input.pl-12 {
-    padding-left: 44px;
-  }
-}
-
-/* Stock Selection Highlight */
-.stock-selected-indicator {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 12px;
-  height: 12px;
-  background: #10b981;
-  border-radius: 50%;
-  box-shadow:
-    0 0 16px rgba(16, 185, 129, 0.6),
-    0 0 4px rgba(16, 185, 129, 0.8);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 0.7;
-    transform: scale(1.1);
-  }
-}
-
-/* OLED theme adjustments */
-.oled .theme-input {
-  background: linear-gradient(135deg,
-      var(--bg-secondary) 0%,
-      rgba(59, 130, 246, 0.08) 100%);
-  border-color: rgba(255, 255, 255, 0.15);
-}
-
-.oled .theme-input:focus {
-  border-color: #60a5fa;
-  box-shadow:
-    0 0 0 3px rgba(96, 165, 250, 0.15),
-    0 4px 16px rgba(96, 165, 250, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-.theme-button-secondary {
-  background-color: var(--bg-secondary);
-  color: var(--text-primary);
-  border: 1px solid var(--text-secondary);
-  border-opacity: 0.3;
-}
-
-.theme-button-secondary:hover {
-  background-color: var(--text-secondary);
-  background-opacity: 0.1;
 }
 
 .theme-button-primary {
@@ -576,10 +175,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.2) 50%,
-      transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
   transition: left 0.5s ease;
 }
 
@@ -611,332 +207,27 @@
   box-shadow: 0 8px 20px rgba(59, 130, 246, 0.1);
 }
 
-/* Futuristic toggle switches */
-.futuristic-toggle {
-  position: relative;
-  width: 52px;
-  height: 28px;
-  background: var(--bg-secondary);
-  border: 2px solid var(--text-secondary);
-  border-opacity: 0.3;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.futuristic-toggle.active {
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  border-color: #3b82f6;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
-}
-
-.futuristic-toggle::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 20px;
-  background: white;
-  border-radius: 50%;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.futuristic-toggle.active::after {
-  transform: translateX(24px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-/* Futuristic select dropdowns */
-.theme-select {
-  background-color: var(--bg-secondary);
-  border: 1.5px solid var(--text-secondary);
-  border-opacity: 0.2;
-  border-radius: 16px;
-  color: var(--text-primary);
-  padding: 14px 18px;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-  background-position: right 12px center;
-  background-repeat: no-repeat;
-  background-size: 16px;
-  padding-right: 40px;
-}
-
-.theme-select:focus {
-  border-color: #3b82f6;
-  box-shadow:
-    0 0 0 3px rgba(59, 130, 246, 0.1),
-    0 4px 16px rgba(59, 130, 246, 0.15);
-  outline: none;
-}
-
-/* Futuristic theme selection buttons */
-.theme-selector-button {
-  position: relative;
-  padding: 20px;
-  border: 2px solid var(--text-secondary);
-  border-opacity: 0.2;
-  border-radius: 20px;
-  background: var(--bg-secondary);
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-}
-
-.theme-selector-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg,
-      rgba(59, 130, 246, 0.1) 0%,
-      transparent 100%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.theme-selector-button:hover::before {
-  opacity: 1;
-}
-
-.theme-selector-button.active {
-  border-color: #3b82f6;
-  background: rgba(59, 130, 246, 0.1);
-  box-shadow:
-    0 8px 24px rgba(59, 130, 246, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-.theme-selector-button.active::after {
-  content: '';
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 8px;
-  height: 8px;
-  background: #3b82f6;
-  border-radius: 50%;
-  box-shadow: 0 0 12px #3b82f6;
-}
-
-/* Futuristic header styling */
-.futuristic-header {
-  background: linear-gradient(135deg,
-      var(--bg-primary) 0%,
-      var(--bg-secondary) 100%);
-  border-radius: 0 0 32px 32px;
-  padding: 32px 24px 24px;
-  margin-bottom: 24px;
-  position: relative;
-  overflow: hidden;
-}
-
-.futuristic-header::before {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(59, 130, 246, 0.4) 50%,
-      transparent 100%);
-}
-
-/* Futuristic avatar */
-.futuristic-avatar {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 18px;
-  color: white;
-  box-shadow:
-    0 8px 24px rgba(59, 130, 246, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  position: relative;
-  overflow: hidden;
-}
-
-.futuristic-avatar::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(45deg,
-      transparent 30%,
-      rgba(255, 255, 255, 0.1) 50%,
-      transparent 70%);
-  animation: avatarShine 3s linear infinite;
-}
-
-@keyframes avatarShine {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* Futuristic spacing and layout */
-.futuristic-section {
-  margin-bottom: 32px;
-}
-
-.futuristic-section-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 16px;
-  position: relative;
-  padding-left: 16px;
-}
-
-.futuristic-section-title::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 4px;
-  height: 20px;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  border-radius: 2px;
-}
-
-/* Responsive futuristic adjustments */
-@media (max-width: 768px) {
-  .theme-card {
-    border-radius: 20px;
-  }
-
-  .theme-input,
-  .theme-select {
-    border-radius: 14px;
-    padding: 12px 16px;
-  }
-
-  .theme-button-primary {
-    border-radius: 16px;
-    padding: 12px 24px;
-  }
-
-  .futuristic-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 14px;
-    font-size: 16px;
-  }
-}
-
-/* Update existing theme variables for better contrast */
-:root {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-}
-
-.light {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-}
-
-.dark {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-}
-
-.oled {
-  --bg-primary: #000000;
-  --bg-secondary: #111111;
-  --text-primary: #ffffff;
-  --text-secondary: #888888;
-}
-
-@layer utilities {
-  .bg-theme-primary {
-    background-color: var(--bg-primary);
-  }
-
-  .bg-theme-secondary {
-    background-color: var(--bg-secondary);
-  }
-
-  .text-theme-primary {
-    color: var(--text-primary);
-  }
-
-  .text-theme-secondary {
-    color: var(--text-secondary);
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
+/* Keep ALL the dock menu styles - these are essential */
 .dock-menu {
   display: flex;
   justify-content: space-around;
   align-items: center;
-
-  /* Liquid transparent background */
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(30px) saturate(150%);
   -webkit-backdrop-filter: blur(30px) saturate(150%);
-
-  /* Enhanced glassmorphism */
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-top: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow:
-    0 25px 45px rgba(0, 0, 0, 0.15),
-    0 10px 25px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-
-  /* Compact size - smaller height */
+  box-shadow: 0 25px 45px rgba(0, 0, 0, 0.15), 0 10px 25px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2);
   padding: 8px 16px;
   margin: 0 12px 20px 12px;
   border-radius: 24px;
-
   position: relative;
   gap: 6px;
   min-height: 56px;
-  /* Reduced from 76px */
   overflow: hidden;
-
-  /* Liquid animation */
   transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-/* Liquid background effect */
 .dock-menu::before {
   content: '';
   position: absolute;
@@ -944,15 +235,11 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.1) 0%,
-      rgba(255, 255, 255, 0.05) 50%,
-      rgba(255, 255, 255, 0.02) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.02) 100%);
   border-radius: inherit;
   pointer-events: none;
 }
 
-/* Floating liquid animation */
 .dock-menu::after {
   content: '';
   position: absolute;
@@ -960,9 +247,7 @@
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle,
-      rgba(59, 130, 246, 0.1) 0%,
-      transparent 70%);
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
   animation: liquidFloat 8s ease-in-out infinite;
   pointer-events: none;
   opacity: 0.6;
@@ -993,26 +278,20 @@
   align-items: center;
   justify-content: center;
   padding: 12px 8px;
-  /* Reduced padding */
   border: none;
   background: transparent;
   cursor: pointer;
   border-radius: 16px;
-  /* Smaller border radius */
   transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   position: relative;
   flex: 1;
   max-width: 60px;
-  /* Reduced from 80px */
   min-width: 48px;
-  /* Reduced from 60px */
   z-index: 2;
   overflow: hidden;
   height: 40px;
-  /* Fixed height for consistency */
 }
 
-/* Liquid hover effect */
 .dock-menu__item::before {
   content: '';
   position: absolute;
@@ -1020,10 +299,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at center,
-      rgba(255, 255, 255, 0.15) 0%,
-      rgba(255, 255, 255, 0.05) 50%,
-      transparent 100%);
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 50%, transparent 100%);
   border-radius: inherit;
   opacity: 0;
   transform: scale(0.8);
@@ -1031,12 +307,6 @@
   pointer-events: none;
 }
 
-
-
-
-
-
-/* Active indicator - now a dot instead of line */
 .dock-menu__item.active::after {
   content: '';
   position: absolute;
@@ -1056,66 +326,40 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  /* Take full width of container */
   height: 100%;
-  /* Take full height of container */
   position: relative;
 }
 
 .dock-menu__icon .icon {
   width: 20px;
-  /* Reduced from 22px */
   height: 20px;
-  /* Reduced from 22px */
   color: rgba(255, 255, 255, 0.7);
   transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
-
-
 .dock-menu__item.active .dock-menu__icon .icon {
   color: var(--component-active-color, #3b82f6);
   transform: scale(1.25) rotate(-2deg);
-  /* Increased scale since no label */
   filter: drop-shadow(0 6px 12px rgba(59, 130, 246, 0.4));
 }
 
-/* Hide text labels completely */
 .dock-menu__text {
   display: none;
 }
 
-/* Special liquid Add Trade button - now more compact */
 .dock-menu__item[data-add-trade="true"] {
-  background: linear-gradient(135deg,
-      rgba(59, 130, 246, 0.8) 0%,
-      rgba(29, 78, 216, 0.9) 100%);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.8) 0%, rgba(29, 78, 216, 0.9) 100%);
   backdrop-filter: blur(20px);
   border-radius: 18px;
-  /* Smaller radius */
   margin: 0 4px;
-  /* Reduced margin */
-  box-shadow:
-    0 6px 20px rgba(59, 130, 246, 0.4),
-    0 3px 10px rgba(59, 130, 246, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4), 0 3px 10px rgba(59, 130, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
   overflow: hidden;
-}
-
-.dock-menu__item[data-add-trade="true"]::before {
-  background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.2) 0%,
-      rgba(255, 255, 255, 0.1) 100%);
 }
 
 .dock-menu__item[data-add-trade="true"]:hover {
   transform: translateY(-4px) scale(1.15);
-  /* Reduced movement */
-  box-shadow:
-    0 12px 30px rgba(59, 130, 246, 0.5),
-    0 6px 16px rgba(59, 130, 246, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow: 0 12px 30px rgba(59, 130, 246, 0.5), 0 6px 16px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .dock-menu__item[data-add-trade="true"] .dock-menu__icon .icon {
@@ -1123,19 +367,15 @@
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
-/* No active dot for Add Trade button since it's already highlighted */
 .dock-menu__item[data-add-trade="true"]::after {
   display: none;
 }
 
-/* Theme adaptations */
+/* Theme adaptations for dock */
 .light .dock-menu {
   background: rgba(255, 255, 255, 0.85);
   border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow:
-    0 25px 45px rgba(0, 0, 0, 0.08),
-    0 10px 25px rgba(0, 0, 0, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: 0 25px 45px rgba(0, 0, 0, 0.08), 0 10px 25px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .light .dock-menu__icon .icon {
@@ -1145,50 +385,14 @@
 .oled .dock-menu {
   background: rgba(0, 0, 0, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow:
-    0 25px 45px rgba(0, 0, 0, 0.9),
-    0 10px 25px rgba(0, 0, 0, 0.7),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 45px rgba(0, 0, 0, 0.9), 0 10px 25px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .oled .dock-menu__icon .icon {
   color: rgba(255, 255, 255, 0.9);
 }
 
-/* NO slide-up animation - immediate appearance */
-.dock-menu {
-  /* Remove animation property completely */
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Responsive compact adjustments */
-@media (max-width: 320px) {
-  .dock-menu {
-    padding: 6px 12px;
-    margin: 0 8px 16px 8px;
-    gap: 4px;
-    border-radius: 20px;
-    min-height: 48px;
-    /* Even smaller on tiny screens */
-  }
-
-  .dock-menu__item {
-    padding: 8px 6px;
-    min-width: 40px;
-    border-radius: 14px;
-    height: 32px;
-  }
-
-  .dock-menu__icon .icon {
-    width: 18px;
-    height: 18px;
-  }
-}
-
-/* Watchlist Dark Theme CSS - Add this to your globals.css */
-
-/* Override the search input styling for watchlist */
+/* Keep ALL watchlist styles - these are essential for your app */
 .watchlist-search-input {
   background: var(--bg-secondary) !important;
   border: 1px solid rgba(148, 163, 184, 0.15) !important;
@@ -1205,634 +409,6 @@
   outline: none !important;
 }
 
-.watchlist-search-input::placeholder {
-  color: var(--text-secondary) !important;
-  opacity: 0.7 !important;
-}
-
-/* Folder input styling */
-.watchlist-folder-input {
-  background: var(--bg-secondary) !important;
-  border: 1px solid rgba(148, 163, 184, 0.15) !important;
-  border-radius: 12px !important;
-  color: var(--text-primary) !important;
-  padding: 12px 16px !important;
-  font-size: 14px !important;
-  transition: all 0.3s ease !important;
-}
-
-.watchlist-folder-input:focus {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-  outline: none !important;
-}
-
-/* Select dropdown styling */
-.watchlist-select {
-  background: var(--bg-secondary) !important;
-  border: 1px solid rgba(148, 163, 184, 0.15) !important;
-  border-radius: 12px !important;
-  color: var(--text-primary) !important;
-  padding: 12px 16px !important;
-  font-size: 14px !important;
-  appearance: none !important;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
-  background-position: right 12px center !important;
-  background-repeat: no-repeat !important;
-  background-size: 16px !important;
-  padding-right: 40px !important;
-  cursor: pointer !important;
-  transition: all 0.3s ease !important;
-}
-
-.watchlist-select:focus {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-  outline: none !important;
-}
-
-/* Button styling for watchlist */
-.watchlist-button-primary {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
-  border: none !important;
-  border-radius: 12px !important;
-  color: white !important;
-  font-weight: 600 !important;
-  padding: 12px 20px !important;
-  font-size: 14px !important;
-  transition: all 0.3s ease !important;
-  cursor: pointer !important;
-}
-
-
-
-.watchlist-button-secondary {
-  background: var(--bg-secondary) !important;
-  border: 1px solid rgba(148, 163, 184, 0.2) !important;
-  border-radius: 12px !important;
-  color: var(--text-primary) !important;
-  font-weight: 500 !important;
-  padding: 12px 20px !important;
-  font-size: 14px !important;
-  transition: all 0.3s ease !important;
-  cursor: pointer !important;
-}
-
-.watchlist-button-secondary:hover {
-  border-color: rgba(59, 130, 246, 0.4) !important;
-  background: rgba(59, 130, 246, 0.05) !important;
-  transform: translateY(-1px) !important;
-}
-
-/* Folder card styling */
-.watchlist-folder-card {
-  background: var(--bg-secondary) !important;
-  border: 1px solid rgba(148, 163, 184, 0.1) !important;
-  border-radius: 16px !important;
-  transition: all 0.3s ease !important;
-}
-
-.watchlist-folder-card:hover {
-  border-color: rgba(148, 163, 184, 0.2) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* Stock item styling - TradingView inspired */
-.watchlist-stock-item {
-  background: rgba(51, 65, 85, 0.3) !important;
-  border: 1px solid rgba(148, 163, 184, 0.05) !important;
-  border-radius: 8px !important;
-  transition: all 0.3s ease !important;
-  cursor: pointer !important;
-  margin-bottom: 2px !important;
-}
-
-.watchlist-stock-item:hover {
-  background: rgba(51, 65, 85, 0.6) !important;
-  border-color: rgba(59, 130, 246, 0.2) !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* Table header styling */
-.watchlist-table-header {
-  background: rgba(51, 65, 85, 0.2) !important;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.1) !important;
-  padding: 8px 12px !important;
-  border-radius: 6px !important;
-  margin-bottom: 4px !important;
-}
-
-/* Add folder card styling */
-.watchlist-add-folder-card {
-  background: var(--bg-primary) !important;
-  border: 1px solid rgba(148, 163, 184, 0.15) !important;
-  border-radius: 16px !important;
-  padding: 16px !important;
-}
-
-/* Search results dropdown */
-.watchlist-search-results {
-  background: var(--bg-secondary) !important;
-  border: 1px solid rgba(148, 163, 184, 0.2) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
-}
-
-.watchlist-search-result-item {
-  padding: 12px 16px !important;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.1) !important;
-  transition: all 0.3s ease !important;
-  cursor: pointer !important;
-}
-
-.watchlist-search-result-item:hover {
-  background: rgba(51, 65, 85, 0.5) !important;
-}
-
-.watchlist-search-result-item:last-child {
-  border-bottom: none !important;
-}
-
-/* OLED specific overrides - STRONGER ENFORCEMENT */
-body.oled .watchlist-search-input,
-.oled .watchlist-search-input,
-[data-theme="oled"] .watchlist-search-input {
-  background: #000000 !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  color: #ffffff !important;
-}
-
-body.oled .watchlist-folder-input,
-.oled .watchlist-folder-input,
-[data-theme="oled"] .watchlist-folder-input {
-  background: #000000 !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  color: #ffffff !important;
-}
-
-body.oled .watchlist-select,
-.oled .watchlist-select,
-[data-theme="oled"] .watchlist-select {
-  background: #000000 !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  color: #ffffff !important;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
-}
-
-body.oled .watchlist-button-secondary,
-.oled .watchlist-button-secondary,
-[data-theme="oled"] .watchlist-button-secondary {
-  background: #000000 !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
-  color: #ffffff !important;
-}
-
-body.oled .watchlist-folder-card,
-.oled .watchlist-folder-card,
-[data-theme="oled"] .watchlist-folder-card {
-  background: #000000 !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-}
-
-body.oled .watchlist-stock-item,
-.oled .watchlist-stock-item,
-[data-theme="oled"] .watchlist-stock-item {
-  background: rgba(26, 26, 26, 0.6) !important;
-  border-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-body.oled .watchlist-stock-item:hover,
-.oled .watchlist-stock-item:hover,
-[data-theme="oled"] .watchlist-stock-item:hover {
-  background: rgba(26, 26, 26, 0.9) !important;
-  border-color: rgba(59, 130, 246, 0.3) !important;
-}
-
-body.oled .watchlist-table-header,
-.oled .watchlist-table-header,
-[data-theme="oled"] .watchlist-table-header {
-  background: rgba(26, 26, 26, 0.4) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-}
-
-body.oled .watchlist-add-folder-card,
-.oled .watchlist-add-folder-card,
-[data-theme="oled"] .watchlist-add-folder-card {
-  background: #000000 !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-body.oled .watchlist-search-results,
-.oled .watchlist-search-results,
-[data-theme="oled"] .watchlist-search-results {
-  background: #000000 !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
-}
-
-body.oled .watchlist-search-result-item:hover,
-.oled .watchlist-search-result-item:hover,
-[data-theme="oled"] .watchlist-search-result-item:hover {
-  background: rgba(26, 26, 26, 0.8) !important;
-}
-
-/* Force override any conflicting styles */
-.watchlist-container input[type="text"],
-.watchlist-container select {
-  background: var(--bg-secondary) !important;
-  border: 1px solid rgba(148, 163, 184, 0.15) !important;
-  color: var(--text-primary) !important;
-}
-
-/* OLED theme overrides for inputs */
-body.oled .watchlist-container input[type="text"],
-body.oled .watchlist-container select,
-.oled .watchlist-container input[type="text"],
-.oled .watchlist-container select,
-[data-theme="oled"] .watchlist-container input[type="text"],
-[data-theme="oled"] .watchlist-container select {
-  background: #000000 !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  color: #ffffff !important;
-}
-
-/* Icon styling in watchlist */
-.watchlist-icon {
-  color: var(--text-secondary) !important;
-  transition: all 0.3s ease !important;
-}
-
-.watchlist-icon:hover {
-  color: #3b82f6 !important;
-}
-
-/* Price and change indicators */
-.watchlist-price-positive {
-  color: #10b981 !important;
-}
-
-.watchlist-price-negative {
-  color: #ef4444 !important;
-}
-
-.watchlist-price-neutral {
-  color: var(--text-primary) !important;
-}
-
-/* Live indicator dot */
-.watchlist-live-dot {
-  background: #10b981 !important;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5) !important;
-  animation: pulse 2s infinite !important;
-}
-
-/* Drag and drop visual feedback */
-.watchlist-drag-overlay {
-  background: rgba(59, 130, 246, 0.9) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3) !important;
-}
-
-/* Column alignment helpers */
-.watchlist-col-symbol {
-  text-align: center !important;
-}
-
-.watchlist-col-price {
-  text-align: center !important;
-  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
-  letter-spacing: 0.025em !important;
-}
-
-.watchlist-col-change {
-  text-align: center !important;
-  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
-  letter-spacing: 0.025em !important;
-}
-
-/* Remove any conflicting Tailwind classes that might be causing the grey appearance */
-.watchlist-container * {
-  --tw-bg-opacity: 1 !important;
-  --tw-text-opacity: 1 !important;
-  --tw-border-opacity: 1 !important;
-}
-
-/* Specific fixes for search input container */
-.watchlist-search-container {
-  position: relative !important;
-}
-
-.watchlist-search-container input {
-  background: var(--bg-secondary) !important;
-  border: 1px solid rgba(148, 163, 184, 0.15) !important;
-  color: var(--text-primary) !important;
-}
-
-/* OLED search container overrides */
-body.oled .watchlist-search-container input,
-.oled .watchlist-search-container input,
-[data-theme="oled"] .watchlist-search-container input {
-  background: #000000 !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  color: #ffffff !important;
-}
-
-.watchlist-search-container svg {
-  color: var(--text-secondary) !important;
-}
-
-/* Make sure all text uses the theme colors */
-.watchlist-text-primary {
-  color: var(--text-primary) !important;
-}
-
-.watchlist-text-secondary {
-  color: var(--text-secondary) !important;
-}
-
-/* Override any bg-gray classes */
-.watchlist-container .bg-gray-700,
-.watchlist-container .bg-gray-800 {
-  background-color: var(--bg-secondary) !important;
-}
-
-.watchlist-container .bg-gray-600 {
-  background-color: var(--bg-tertiary) !important;
-}
-
-.watchlist-container .border-gray-600,
-.watchlist-container .border-gray-700 {
-  border-color: rgba(148, 163, 184, 0.15) !important;
-}
-
-.watchlist-container .text-gray-400 {
-  color: var(--text-secondary) !important;
-}
-
-.watchlist-container .text-white {
-  color: var(--text-primary) !important;
-}
-
-/* TradingView-style improvements */
-.watchlist-stock-item:nth-child(even) {
-  background: rgba(51, 65, 85, 0.2) !important;
-}
-
-.watchlist-stock-item:nth-child(odd) {
-  background: rgba(51, 65, 85, 0.1) !important;
-}
-
-.oled .watchlist-stock-item:nth-child(even) {
-  background: rgba(26, 26, 26, 0.4) !important;
-}
-
-.oled .watchlist-stock-item:nth-child(odd) {
-  background: rgba(26, 26, 26, 0.2) !important;
-}
-
-/* Smooth price animations */
-.watchlist-price-animate {
-  transition: all 0.5s ease !important;
-}
-
-/* Enhanced hover states */
-.watchlist-stock-item:hover .watchlist-col-price,
-.watchlist-stock-item:hover .watchlist-col-change {
-  font-weight: 600 !important;
-}
-
-/* Mobile responsive adjustments for watchlist */
-@media (max-width: 768px) {
-  .watchlist-stock-item {
-    padding: 12px 8px !important;
-  }
-
-  .watchlist-col-price {
-    font-size: 13px !important;
-  }
-
-  .watchlist-col-change {
-    font-size: 12px !important;
-  }
-}
-
-/* Icon styling in watchlist */
-.watchlist-icon {
-  color: var(--text-secondary) !important;
-  transition: all 0.3s ease !important;
-}
-
-.watchlist-icon:hover {
-  color: #3b82f6 !important;
-}
-
-/* Price and change indicators */
-.watchlist-price-positive {
-  color: #10b981 !important;
-}
-
-.watchlist-price-negative {
-  color: #ef4444 !important;
-}
-
-.watchlist-price-neutral {
-  color: var(--text-primary) !important;
-}
-
-/* Live indicator dot */
-.watchlist-live-dot {
-  background: #10b981 !important;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5) !important;
-  animation: pulse 2s infinite !important;
-}
-
-/* Drag and drop visual feedback */
-.watchlist-drag-overlay {
-  background: rgba(59, 130, 246, 0.9) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3) !important;
-}
-
-/* Column alignment helpers */
-.watchlist-col-symbol {
-  text-align: left !important;
-}
-
-.watchlist-col-price {
-  text-align: center !important;
-  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
-  letter-spacing: 0.025em !important;
-}
-
-.watchlist-col-change {
-  text-align: center !important;
-  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
-  letter-spacing: 0.025em !important;
-}
-
-/* Remove any conflicting Tailwind classes that might be causing the grey appearance */
-.watchlist-container * {
-  --tw-bg-opacity: 1 !important;
-  --tw-text-opacity: 1 !important;
-  --tw-border-opacity: 1 !important;
-}
-
-/* Specific fixes for search input container */
-.watchlist-search-container {
-  position: relative !important;
-}
-
-.watchlist-search-container input {
-  background: var(--bg-secondary) !important;
-  border: 1px solid rgba(148, 163, 184, 0.15) !important;
-  color: var(--text-primary) !important;
-}
-
-.watchlist-search-container svg {
-  color: var(--text-secondary) !important;
-}
-
-/* Make sure all text uses the theme colors */
-.watchlist-text-primary {
-  color: var(--text-primary) !important;
-}
-
-.watchlist-text-secondary {
-  color: var(--text-secondary) !important;
-}
-
-/* Override any bg-gray classes */
-.watchlist-container .bg-gray-700,
-.watchlist-container .bg-gray-800 {
-  background-color: var(--bg-secondary) !important;
-}
-
-.watchlist-container .bg-gray-600 {
-  background-color: var(--bg-tertiary) !important;
-}
-
-.watchlist-container .border-gray-600,
-.watchlist-container .border-gray-700 {
-  border-color: rgba(148, 163, 184, 0.15) !important;
-}
-
-.watchlist-container .text-gray-400 {
-  color: var(--text-secondary) !important;
-}
-
-.watchlist-container .text-white {
-  color: var(--text-primary) !important;
-}
-
-/* TradingView-style improvements */
-.watchlist-stock-item:nth-child(even) {
-  background: rgba(51, 65, 85, 0.2) !important;
-}
-
-.watchlist-stock-item:nth-child(odd) {
-  background: rgba(51, 65, 85, 0.1) !important;
-}
-
-.oled .watchlist-stock-item:nth-child(even) {
-  background: rgba(26, 26, 26, 0.4) !important;
-}
-
-.oled .watchlist-stock-item:nth-child(odd) {
-  background: rgba(26, 26, 26, 0.2) !important;
-}
-
-/* Smooth price animations */
-.watchlist-price-animate {
-  transition: all 0.5s ease !important;
-}
-
-/* Enhanced hover states */
-.watchlist-stock-item:hover .watchlist-col-price,
-.watchlist-stock-item:hover .watchlist-col-change {
-  font-weight: 600 !important;
-}
-
-/* Mobile responsive adjustments for watchlist */
-@media (max-width: 768px) {
-  .watchlist-stock-item {
-    padding: 12px 8px !important;
-  }
-
-  .watchlist-col-price {
-    font-size: 13px !important;
-  }
-
-  .watchlist-col-change {
-    font-size: 12px !important;
-  }
-}
-
-/* Watchlist Dark Theme CSS - Add this to your globals.css */
-
-/* Override the search input styling for watchlist */
-.watchlist-search-input {
-  background: var(--bg-secondary) !important;
-  border: 1px solid rgba(148, 163, 184, 0.15) !important;
-  border-radius: 12px !important;
-  color: var(--text-primary) !important;
-  padding: 12px 16px !important;
-  font-size: 14px !important;
-  transition: all 0.3s ease !important;
-}
-
-.watchlist-search-input:focus {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-  outline: none !important;
-}
-
-.watchlist-search-input::placeholder {
-  color: var(--text-secondary) !important;
-  opacity: 0.7 !important;
-}
-
-/* Folder input styling */
-.watchlist-folder-input {
-  background: var(--bg-secondary) !important;
-  border: 1px solid rgba(148, 163, 184, 0.15) !important;
-  border-radius: 12px !important;
-  color: var(--text-primary) !important;
-  padding: 12px 16px !important;
-  font-size: 14px !important;
-  transition: all 0.3s ease !important;
-}
-
-.watchlist-folder-input:focus {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-  outline: none !important;
-}
-
-/* Select dropdown styling */
-.watchlist-select {
-  background: var(--bg-secondary) !important;
-  border: 1px solid rgba(148, 163, 184, 0.15) !important;
-  border-radius: 12px !important;
-  color: var(--text-primary) !important;
-  padding: 12px 16px !important;
-  font-size: 14px !important;
-  appearance: none !important;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
-  background-position: right 12px center !important;
-  background-repeat: no-repeat !important;
-  background-size: 16px !important;
-  padding-right: 40px !important;
-  cursor: pointer !important;
-  transition: all 0.3s ease !important;
-}
-
-.watchlist-select:focus {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-  outline: none !important;
-}
-
-/* Button styling for watchlist */
 .watchlist-button-primary {
   background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
   border: none !important;
@@ -1868,166 +444,6 @@ body.oled .watchlist-search-container input,
   transform: translateY(-1px) !important;
 }
 
-/* Folder card styling */
-.watchlist-folder-card {
-  background: var(--bg-secondary) !important;
-  border: 1px solid rgba(148, 163, 184, 0.1) !important;
-  border-radius: 16px !important;
-  transition: all 0.3s ease !important;
-}
-
-.watchlist-folder-card:hover {
-  border-color: rgba(148, 163, 184, 0.2) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* Stock item styling */
-.watchlist-stock-item {
-  background: rgba(51, 65, 85, 0.5) !important;
-  border: 1px solid rgba(148, 163, 184, 0.1) !important;
-  border-radius: 12px !important;
-  transition: all 0.3s ease !important;
-  cursor: pointer !important;
-}
-
-.watchlist-stock-item:hover {
-  background: rgba(51, 65, 85, 0.8) !important;
-  border-color: rgba(59, 130, 246, 0.2) !important;
-  transform: translateY(-1px) !important;
-}
-
-/* Add folder card styling */
-.watchlist-add-folder-card {
-  background: var(--bg-secondary) !important;
-  border: 1px solid rgba(148, 163, 184, 0.15) !important;
-  border-radius: 16px !important;
-  padding: 16px !important;
-}
-
-/* Search results dropdown */
-.watchlist-search-results {
-  background: var(--bg-secondary) !important;
-  border: 1px solid rgba(148, 163, 184, 0.2) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
-}
-
-.watchlist-search-result-item {
-  padding: 12px 16px !important;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.1) !important;
-  transition: all 0.3s ease !important;
-  cursor: pointer !important;
-}
-
-.watchlist-search-result-item:hover {
-  background: rgba(51, 65, 85, 0.5) !important;
-}
-
-.watchlist-search-result-item:last-child {
-  border-bottom: none !important;
-}
-
-/* OLED specific overrides */
-.oled .watchlist-search-input,
-.oled .watchlist-folder-input,
-.oled .watchlist-select {
-  background: #111111 !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-.oled .watchlist-button-secondary {
-  background: #111111 !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
-}
-
-.oled .watchlist-folder-card {
-  background: #111111 !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-}
-
-.oled .watchlist-stock-item {
-  background: rgba(26, 26, 26, 0.8) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-}
-
-.oled .watchlist-stock-item:hover {
-  background: rgba(26, 26, 26, 1) !important;
-}
-
-.oled .watchlist-add-folder-card {
-  background: #111111 !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-.oled .watchlist-search-results {
-  background: #111111 !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
-}
-
-.oled .watchlist-search-result-item:hover {
-  background: rgba(26, 26, 26, 0.8) !important;
-}
-
-/* Icon styling in watchlist */
-.watchlist-icon {
-  color: var(--text-secondary) !important;
-  transition: all 0.3s ease !important;
-}
-
-.watchlist-icon:hover {
-  color: #3b82f6 !important;
-}
-
-/* Price and change indicators */
-.watchlist-price-positive {
-  color: #10b981 !important;
-}
-
-.watchlist-price-negative {
-  color: #ef4444 !important;
-}
-
-.watchlist-price-neutral {
-  color: var(--text-primary) !important;
-}
-
-/* Live indicator dot */
-.watchlist-live-dot {
-  background: #10b981 !important;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5) !important;
-  animation: pulse 2s infinite !important;
-}
-
-/* Drag and drop visual feedback */
-.watchlist-drag-overlay {
-  background: rgba(59, 130, 246, 0.9) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3) !important;
-}
-
-/* Remove any conflicting Tailwind classes that might be causing the grey appearance */
-.watchlist-container * {
-  --tw-bg-opacity: 1 !important;
-  --tw-text-opacity: 1 !important;
-  --tw-border-opacity: 1 !important;
-}
-
-/* Specific fixes for search input container */
-.watchlist-search-container {
-  position: relative !important;
-}
-
-.watchlist-search-container input {
-  background: var(--bg-secondary) !important;
-  border: 1px solid rgba(148, 163, 184, 0.15) !important;
-  color: var(--text-primary) !important;
-}
-
-.watchlist-search-container svg {
-  color: var(--text-secondary) !important;
-}
-
-/* Make sure all text uses the theme colors */
 .watchlist-text-primary {
   color: var(--text-primary) !important;
 }
@@ -2036,202 +452,92 @@ body.oled .watchlist-search-container input,
   color: var(--text-secondary) !important;
 }
 
-/* Override any bg-gray classes */
-.watchlist-container .bg-gray-700,
-.watchlist-container .bg-gray-800 {
-  background-color: var(--bg-secondary) !important;
+/* OLED specific overrides - Keep these for dark mode functionality */
+body.oled .watchlist-search-input,
+.oled .watchlist-search-input,
+[data-theme="oled"] .watchlist-search-input {
+  background: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
 }
 
-.watchlist-container .bg-gray-600 {
-  background-color: var(--bg-tertiary) !important;
+body.oled .watchlist-button-secondary,
+.oled .watchlist-button-secondary,
+[data-theme="oled"] .watchlist-button-secondary {
+  background: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
 }
 
-.watchlist-container .border-gray-600,
-.watchlist-container .border-gray-700 {
-  border-color: rgba(148, 163, 184, 0.15) !important;
+/* Utility classes for Tailwind compatibility */
+@layer utilities {
+  .bg-theme-primary {
+    background-color: var(--bg-primary);
+  }
+
+  .bg-theme-secondary {
+    background-color: var(--bg-secondary);
+  }
+
+  .text-theme-primary {
+    color: var(--text-primary);
+  }
+
+  .text-theme-secondary {
+    color: var(--text-secondary);
+  }
 }
 
-.watchlist-container .text-gray-400 {
-  color: var(--text-secondary) !important;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
-.watchlist-container .text-white {
-  color: var(--text-primary) !important;
+/* Custom animations */
+@keyframes pulse-green {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
-
-/* Add these styles to your globals.css - Settings Page Clean Styling */
-
-/* Settings Theme Selector - Clean No Border/Radius with Blue Active */
-.settings-theme-selector {
-  position: relative;
-  padding: 20px;
-  border: none !important;
-  border-radius: 0 !important;
-  background: var(--bg-secondary);
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
+.animate-pulse-green {
+  animation: pulse-green 2s infinite;
 }
 
-.settings-theme-selector::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg,
-      rgba(59, 130, 246, 0.1) 0%,
-      transparent 100%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-.settings-theme-selector:hover::before {
-  opacity: 1;
-}
-
-
-.settings-theme-selector.active {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
-  color: white !important;
-  border-radius: 8px !important;
-  box-shadow:
-    0 4px 16px rgba(59, 130, 246, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-
-.settings-theme-selector.active .theme-text-primary {
-  color: white !important;
-}
-
-.settings-theme-selector.active::after {
-  content: '';
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 8px;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 50%;
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
-}
-
-/* Settings Form Elements - Clean No Border/Radius */
-.settings-select {
-  background-color: var(--bg-secondary);
-  border: none !important;
-  border-radius: 0 !important;
-  color: var(--text-primary);
-  padding: 14px 18px;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-  background-position: right 12px center;
-  background-repeat: no-repeat;
-  background-size: 16px;
-  padding-right: 40px;
-  width: 100%;
-}
-
-.settings-select:focus {
-  background: rgba(59, 130, 246, 0.05);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  outline: none;
-}
-
-.settings-select:hover {
-  background: rgba(59, 130, 246, 0.02);
-}
-
-/* Settings Input - Clean No Border/Radius */
-.settings-input {
-  background: var(--bg-secondary);
-  border: none !important;
-  border-radius: 0 !important;
-  color: var(--text-primary);
-  padding: 14px 18px;
-  font-size: 15px;
-  font-weight: 500;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  width: 100%;
-}
-
-.settings-input:focus {
-  background: rgba(59, 130, 246, 0.05);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  outline: none;
-}
-
-.settings-input:hover {
-  background: rgba(59, 130, 246, 0.02);
-}
-
-/* UPDATED: Settings Input with Icon - Fixed alignment */
-.settings-input-group {
-  position: relative;
-  display: flex;
-  align-items: center;
-  background: var(--bg-secondary);
-}
-
-.settings-input-group .settings-input {
-  padding-left: 45px;
+::-webkit-scrollbar-track {
   background: transparent;
-  flex: 1;
 }
 
-.settings-input-group .settings-input-icon {
-  position: absolute;
-  left: 14px;
-  color: var(--text-secondary);
-  pointer-events: none;
-  z-index: 1;
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 3px;
 }
 
-/* UPDATED: Improved input group focus states */
-.settings-input-group:focus-within {
-  background: rgba(59, 130, 246, 0.05);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
 }
 
-.settings-input-group:hover {
-  background: rgba(59, 130, 246, 0.02);
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
 }
 
-/* Theme Color Variants for Clean Styling */
-.light .settings-theme-selector {
-  background: #f1f5f9;
-}
-
-.light .settings-select,
-.light .settings-input,
-.light .settings-input-group {
-  background: #f1f5f9;
-}
-
-.light .settings-select:focus,
-.light .settings-input:focus,
-.light .settings-input-group:focus-within {
-  background: rgba(59, 130, 246, 0.08);
-}
-
-.oled .settings-theme-selector {
-  background: #111111;
-}
-
-.oled .settings-select,
-.oled .settings-input,
-.oled .settings-input-group {
-  background: #111111;
-}
-
-.oled .settings-select:focus,
-.oled .settings-input:focus,
-.oled .settings-input-group:focus-within {
-  background: rgba(59, 130, 246, 0.1);
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
 }
